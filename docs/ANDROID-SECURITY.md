@@ -41,7 +41,11 @@ The notification service is exported **with** Android's `BIND_NOTIFICATION_LISTE
 
 ## Google review
 
-Use the [official Play Protect appeal form](https://support.google.com/googleplay/android-developer/contact/protectappeals) for a review of this exact public APK. As checked above, the form requests a contact email, package name, the SHA-256 of the APK uploaded to VirusTotal, and supporting information. These are external submissions; no appeal or VirusTotal upload was performed by this signing check. Use the public APK only, never signing keys, passwords, pairing invitations or personal messages.
+The public 0.5.0 APK was uploaded to [VirusTotal](https://www.virustotal.com/gui/file/0dbeeba8dc447d9aefcc1b0fb690823c70766834e3a7881b23cde3c18feb21bc), and an appeal was submitted through the [official Play Protect form](https://support.google.com/googleplay/android-developer/contact/protectappeals) on 22 October 2026 with the maintainer's authorization. Google displayed its submission confirmation and requested verification through the contact email. Google review remains pending; this is not installation approval. No signing keys, passwords, pairing invitations or private user messages were submitted.
+
+VirusTotal's completed scan on that date reported **0 detections from 68 engines** for this exact APK. That result does not determine Google's separate sensitive-permission installation decision.
+
+For future reviews, the form requests a contact email, package name, the SHA-256 of the APK uploaded to VirusTotal, and supporting information. Use the public APK only. The supporting-information field currently has a 1,000-character limit.
 
 Explain the optional companion use, consent flow, network destination, permission purposes and revocation controls. Include the exact warning, device/Android version, install source, release URL, source URL, APK hash and signing-certificate fingerprint. The repository includes actual UI screenshots and validation limits. Submission and review do not guarantee approval. Play Store publication has its own developer verification, permission-policy and review requirements; signing an app bundle alone does not complete them.
 

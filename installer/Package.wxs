@@ -1,0 +1,32 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package Name="Synqora" Manufacturer="Synqora" Version="0.3.0" UpgradeCode="498A3379-13B3-49F1-95E3-0EBB2FE1AF65" Scope="perMachine" Compressed="yes">
+    <MajorUpgrade DowngradeErrorMessage="A newer version of Synqora is already installed." />
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+    <StandardDirectory Id="ProgramFiles64Folder"><Directory Id="INSTALLFOLDER" Name="Synqora">
+      <Component Id="ApplicationExecutable" Guid="259AB82C-C036-4A7E-9F89-65DA1F0E77FD">
+        <File Id="SynqoraExecutable" Source="$(var.PublishDir)\Synqora.exe" KeyPath="yes">
+          <Shortcut Id="StartSynqora" Directory="ProgramMenuFolder" Name="Synqora" Advertise="yes" WorkingDirectory="INSTALLFOLDER" Icon="Synqora.exe" />
+        </File>
+      </Component>
+      <Component Id="CameraSource" Guid="1D08DB1B-9BCF-44F8-A2FB-268BFF3D398D" Bitness="always64">
+        <File Id="CameraSourceDll" Source="$(var.PublishDir)\Synqora.Camera.dll" KeyPath="yes" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\CLSID\{57FD6F94-9413-4E47-A4CA-C0AFD738D152}" Value="Synqora Camera Source" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\CLSID\{57FD6F94-9413-4E47-A4CA-C0AFD738D152}\InProcServer32" Value="[#CameraSourceDll]" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\CLSID\{57FD6F94-9413-4E47-A4CA-C0AFD738D152}\InProcServer32" Name="ThreadingModel" Value="Both" Type="string" />
+      </Component>
+    </Directory></StandardDirectory>
+    <Icon Id="Synqora.exe" SourceFile="$(var.PublishDir)\Synqora.exe" />
+    <Property Id="ARPPRODUCTICON" Value="Synqora.exe" />
+    <Property Id="ARPCOMMENTS" Value="Synqora development build. Windows 11 camera source and original VB-CABLE setup archive included. Complete the separate vendor microphone setup once; no unsigned driver is installed." />
+    <Feature Id="SynqoraApp" Title="Synqora" Level="1">
+      <Files Include="$(var.PublishDir)\**" Directory="INSTALLFOLDER">
+        <Exclude Files="$(var.PublishDir)\Synqora.exe" />
+        <Exclude Files="$(var.PublishDir)\Synqora.Camera.dll" />
+      </Files>
+      <ComponentRef Id="ApplicationExecutable" />
+      <ComponentRef Id="CameraSource" />
+    </Feature>
+    <Property Id="WINDOWS_CURRENT_BUILD"><RegistrySearch Id="ReadWindowsBuild" Root="HKLM" Key="SOFTWARE\Microsoft\Windows NT\CurrentVersion" Name="CurrentBuildNumber" Type="raw" Bitness="always64" /></Property>
+    <Launch Condition="Installed OR (VersionNT64 AND WINDOWS_CURRENT_BUILD &gt;= 19041)" Message="Synqora requires 64-bit Windows 10 version 2004 or later, or Windows 11." />
+  </Package>
+</Wix>

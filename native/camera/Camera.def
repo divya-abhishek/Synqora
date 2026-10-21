@@ -1,0 +1,4 @@
+LIBRARY "Synqora.Camera.dll"
+EXPORTS
+    DllGetClassObject PRIVATE
+    DllCanUnloadNow PRIVATE

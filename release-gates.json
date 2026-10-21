@@ -1,0 +1,16 @@
+{
+  "version": "0.3.0",
+  "status": "development",
+  "virtualMicrophoneImplemented": false,
+  "virtualMicrophoneSourceCompiled": true,
+  "virtualMicrophoneRingValidated": true,
+  "virtualMicrophoneKernelValidated": false,
+  "virtualAudioProductionSigned": false,
+  "virtualCameraImplemented": true,
+  "virtualCameraNativeConsumerValidated": true,
+  "virtualCameraDeviceValidated": false,
+  "physicalPhoneStreamingValidated": false,
+  "streamingFrameTimeTargetMet": false,
+  "cleanMachineOfflineInstallValidated": false,
+  "upgradeAndUninstallValidated": false
+}

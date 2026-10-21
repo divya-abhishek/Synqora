@@ -1,0 +1,10 @@
+<Project Sdk="WixToolset.Sdk/5.0.2">
+  <PropertyGroup>
+    <OutputName>Synqora-0.2.0-win-x64</OutputName>
+    <InstallerPlatform>x64</InstallerPlatform>
+    <DefineConstants>PublishDir=$(MSBuildThisFileDirectory)..\dist\windows-portable</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="Metadata\Synqora.Setup.Metadata.csproj" ReferenceOutputAssembly="false" OutputItemType="WixExtension" />
+  </ItemGroup>
+</Project>

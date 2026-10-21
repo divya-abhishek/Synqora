@@ -10,6 +10,8 @@ Use Windows 10 build 19041+ x64 for the client. Windows camera sharing requires 
 
 Use Android 10 or later. Install the APK with the device's package installer and grant microphone/camera permission only for features you start. Notifications expose the active session and Disconnect action. Battery saver, thermal pressure and device-specific background restrictions can affect sustained operation. The app offers a dim-display camera control; it dims the screen rather than powering off the panel.
 
+The APK is signed, but Play Protect can still block installation because its optional notification-sync service declares sensitive notification access. A tester has reported that block for 0.5.0. Signing again does not clear Google's classification. Read [Android signing, permissions and the official review route](ANDROID-SECURITY.md) and the [data-handling notice](PRIVACY.md). Keep device protections enabled; Google review remains pending.
+
 ## Pairing
 
 Put both devices on the same reachable local network. On Windows select **Connect phone**. On Android select **Connect a computer** or the link icon, then **Scan PC code**. A pairing link can be pasted instead. An invitation expires after ten minutes. Treat it as a secret; do not post it in issues or screenshots. No account is needed.

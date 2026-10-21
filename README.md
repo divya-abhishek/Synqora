@@ -66,6 +66,8 @@ The MSI bundles the app's .NET, Windows App SDK, graphics and Visual C++ runtime
 4. Start Microphone or Webcam on the phone. Allow the corresponding Android permission when prompted. Keep the active-session notification available so you can disconnect.
 5. For Touchpad and Keyboard, enable **Allow phone keyboard & pointer** on the PC. Focus the destination PC app before typing. Disconnecting revokes remote-input permission.
 
+**Android installation notice:** the APK has a verified release signature, but a tester has reported Play Protect's sensitive-permission block. The optional notification listener matches Google's documented trigger for downloaded APKs. Re-signing does not grant Google approval. See [signing identity and review guidance](docs/ANDROID-SECURITY.md) and [data handling](docs/PRIVACY.md).
+
 ### Microphone setup for Meet and other apps
 
 The phone microphone reaching Synqora does **not** by itself create a Windows recording device.

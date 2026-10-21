@@ -20,7 +20,3 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-Exceptions: native/audio/* and tools/prepare_audio.py are offered under the
-Microsoft Public License, preserved in native/audio/LICENSE.SysVAD.txt.
-Third-party runtimes, libraries and optional driver archives retain their
-own licenses; see THIRD-PARTY-NOTICES.md.

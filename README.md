@@ -1,5 +1,7 @@
 # Synqora 0.3 — Veil
 
+The application source is [MIT licensed](LICENSE). The separate `native/audio/` research component and `tools/prepare_audio.py` are under [MS-PL](native/audio/LICENSE.SysVAD.txt), as stated in that component's README. Third-party libraries and the optional VB-CABLE archive retain their own licenses; see [third-party notices](THIRD-PARTY-NOTICES.md).
+
 Native WinUI 3 and Jetpack Compose apps for using a phone as a PC microphone, camera, touchpad and live keyboard. Neutral charcoal/pearl materials, lighter desktop acrylic, immediate Windows navigation, spring press feedback, light/dark themes and an original padded silver mark. Exact optical Apple refraction is not implemented.
 
 These are **development review builds**. Actual emulator capture, screen-off streaming, live IME edits, raw gestures, pinned TLS and the native Windows receiver pass integration tests. The original microphone driver still needs validation/signing; physical-phone acceptance of this revision, optical glass rendering and frame-time targets remain unfinished. See [validation](docs/VALIDATION.md).

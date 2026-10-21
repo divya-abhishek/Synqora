@@ -13,15 +13,18 @@ p.add_argument('--adb', default='adb')
 p.add_argument('--matrix', action='store_true')
 p.add_argument('--measure', action='store_true', help='Measure navigation separately from other host build/capture work')
 p.add_argument('--out', default='previews', help='Keep work-in-progress evidence separate from published builds')
-p.add_argument('--screen', action='append', choices=['Overview', 'Microphone', 'Webcam', 'Touchpad', 'Keyboard', 'Settings'], help='Refresh selected screens after a focused UI change')
+p.add_argument('--screen', action='append', choices=['Overview', 'Inbox', 'Files', 'Photos', 'Calls', 'Microphone', 'Webcam', 'Touchpad', 'Keyboard', 'Settings'], help='Refresh selected screens after a focused UI change')
 a = p.parse_args()
 root = pathlib.Path(__file__).resolve().parents[1]
 out = root / a.out
 out.mkdir(exist_ok=True, parents=True)
-screens = a.screen or ['Overview', 'Microphone', 'Webcam', 'Touchpad', 'Keyboard', 'Settings']
+screens = a.screen or ['Overview', 'Inbox', 'Files', 'Photos', 'Calls', 'Microphone', 'Webcam', 'Touchpad', 'Keyboard', 'Settings']
 
 def adb(*args):
     return subprocess.run([a.adb, *args], check=True, capture_output=True).stdout.decode(errors='replace')
+
+if not adb('get-serialno').strip().startswith('emulator-'):
+    raise SystemExit('Viewport and screenshot fixtures require a disposable Android emulator.')
 
 def launch(screen, theme, *extra):
     adb('shell', 'am', 'force-stop', 'com.synqora')
@@ -33,7 +36,11 @@ def launch(screen, theme, *extra):
         adb('shell', 'uiautomator', 'dump', '/sdcard/synqora-capture.xml')
         hierarchy = adb('shell', 'cat', '/sdcard/synqora-capture.xml')
         expected = {
-            'Overview': 'Phone and computer. Together.',
+            'Overview': 'Your devices',
+            'Inbox': 'Notifications',
+            'Files': 'Send files between your phone and PC.',
+            'Photos': 'Photos and videos',
+            'Calls': 'Call settings',
             'Microphone': 'Phone audio, ready for your PC.',
             'Webcam': 'Camera off',
             'Touchpad': 'One finger to move. Two fingers to scroll.',
@@ -43,7 +50,7 @@ def launch(screen, theme, *extra):
         # Feature titles also occur on Home tiles; require page-specific content.
         nodes = ET.fromstring(hierarchy).iter('node')
         drawn = any(node.get('package') == 'com.synqora' and node.get('text') == expected for node in nodes)
-        if drawn and 'Connection details' in hierarchy:
+        if drawn and 'Settings' in hierarchy:
             time.sleep(.4)
             return
     raise RuntimeError(f'{screen} did not draw its app controls in time')
@@ -56,7 +63,7 @@ try:
     adb('shell', 'wm', 'size', '1080x2400')
     adb('shell', 'wm', 'density', '420')
     launch('Overview', 'Dark', '--ez', 'reset_preferences', 'true')
-    for theme in ['Dark', 'Light']:
+    for theme in ['Dark']:
         for screen in screens:
             launch(screen, theme)
             capture(f'android-{theme.lower()}-{screen.lower()}')
@@ -70,7 +77,7 @@ try:
         adb('shell', 'wm', 'size', '1080x2400')
         adb('shell', 'wm', 'density', '420')
         adb('shell', 'settings', 'put', 'system', 'font_scale', '1.6')
-        launch('Settings', 'Light')
+        launch('Settings', 'Dark')
         capture('android-large-text-settings')
         adb('shell', 'settings', 'put', 'system', 'font_scale', '1.0')
     launch('Overview', 'Dark', '-e', 'effects', 'Economy')
@@ -82,7 +89,7 @@ try:
         adb('shell', 'uiautomator', 'dump', '/sdcard/synqora-capture.xml')
         hierarchy = ET.fromstring(adb('shell', 'cat', '/sdcard/synqora-capture.xml'))
         targets = []
-        for label in ['Settings', 'Home']:
+        for label in ['Inbox', 'Device']:
             matches = [node for node in hierarchy.iter('node') if node.get('text') == label]
             bounds = [list(map(int, re.findall(r'\d+', node.get('bounds', '')))) for node in matches]
             x1, y1, x2, y2 = max((b for b in bounds if len(b) == 4), key=lambda b: b[3])

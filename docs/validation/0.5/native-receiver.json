@@ -1,0 +1,25 @@
+{
+  "scenario": "Android CameraX \u002B AudioRecord \u2192 pinned TLS \u2192 WinUI \u002B original Media Foundation camera source; offscreen captures; no OS input injection",
+  "AudioBytes": 1113600,
+  "VideoFrames": 182,
+  "decodedFrames": 182,
+  "videoDimensions": "720 \u00D7 1280",
+  "nativeSource": {
+    "Width": 1280,
+    "Height": 720,
+    "Bytes": 1382400,
+    "Checksum": 8915390386449337837,
+    "MinimumLuma": 16,
+    "MaximumLuma": 234
+  },
+  "uiFrameCallbacks": {
+    "scenario": "24 immediate page changes during simultaneous streaming; UI rendering callbacks, not GPU present times",
+    "count": 785,
+    "p50Ms": 5.553600000000188,
+    "p95Ms": 7.9823999999998705,
+    "over33ms": 2
+  },
+  "remoteControlsAllowed": false,
+  "frameError": "",
+  "cameraBridgeError": ""
+}

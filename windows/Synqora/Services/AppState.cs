@@ -26,7 +26,9 @@ public sealed class Preferences
 {
     private static readonly object SaveGate = new();
     private CancellationTokenSource? pendingSave;
-    public string Theme { get; set; } = "System";
+    public string Theme { get; set; } = "Dark";
+    public bool MinimizeToTray { get; set; } = true;
+    public bool CloseToTray { get; set; } = true;
     public bool ReducedMotion { get; set; }
     public bool ReducedTransparency { get; set; }
     public string Effects { get; set; } = "Balanced";

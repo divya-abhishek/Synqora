@@ -30,22 +30,29 @@ class SessionService : LifecycleService() {
         lifecycleScope.launch {
             state.status.collectLatest { current ->
                 status = current
+                updateWakeLock(current)
                 if (!current.keepAlive) {
                     // The connect request and service startup can arrive in either order.
                     delay(5000)
                     if (!state.status.value.keepAlive) stopSelf()
                 } else {
                     showNotification(types(current.microphone, current.camera))
-                    wake.acquire(10 * 60_000L)
+                    while (current.microphone || current.camera) {
+                        delay(5 * 60_000L)
+                        wake.acquire(10 * 60_000L)
+                    }
                 }
             }
         }
-        lifecycleScope.launch {
-            while (isActive) {
-                delay(5 * 60_000L)
-                if (status.keepAlive) wake.acquire(10 * 60_000L)
-            }
-        }
+    }
+    private fun updateWakeLock(current: SessionStatus) {
+        if (current.camera || current.microphone) {
+            if (!wake.isHeld) wake.acquire(10 * 60_000L)
+        } else if (wake.isHeld) wake.release()
+    }
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        state.stopCapture()
+        super.onTaskRemoved(rootIntent)
     }
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
@@ -61,7 +68,7 @@ class SessionService : LifecycleService() {
         val open = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         val stop = PendingIntent.getService(this, 1, Intent(this, SessionService::class.java).setAction(STOP), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         val activities = listOfNotNull(if (state.microphoneRunning) "microphone" else null, if (state.camera.state.value.active) "camera" else null)
-        val message = if (activities.isNotEmpty()) "Active: ${activities.joinToString(" + ")}. Continues with the screen off." else "Your PC connection stays active with the screen off."
+        val message = if (activities.isNotEmpty()) "Active: ${activities.joinToString(" + ")}. Continues with the screen off." else "Companion ready · camera and microphone off"
         val notification = Notification.Builder(this, CHANNEL).setSmallIcon(R.drawable.synqora_mark).setContentTitle(if (state.status.value.phase == ConnectionPhase.Connected) "Connected to ${state.status.value.name}" else "Synqora session").setContentText(message).setContentIntent(open).setOngoing(true).setOnlyAlertOnce(true).setCategory(Notification.CATEGORY_SERVICE).addAction(Notification.Action.Builder(null, "Disconnect", stop).build()).build()
         ServiceCompat.startForeground(this, ID, notification, type)
     }

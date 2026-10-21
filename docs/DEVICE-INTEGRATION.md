@@ -34,3 +34,15 @@ Earlier temporary registration testing was rejected by automatic approval review
 
 References: [MFCreateVirtualCamera](https://learn.microsoft.com/en-us/windows/win32/api/mfvirtualcamera/nf-mfvirtualcamera-mfcreatevirtualcamera), [Microsoft camera sample](https://github.com/microsoft/Windows-Camera/tree/master/Samples/VirtualCamera), [SysVAD](https://learn.microsoft.com/en-us/samples/microsoft/windows-driver-samples/sysvad-virtual-audio-device-driver-sample/), [driver signing](https://learn.microsoft.com/en-us/windows-hardware/drivers/dashboard/driver-signing-offerings). WO Mic/DroidCam are behavior references; none of their binaries, protocols or assets are copied.
 
+
+## Companion features in 0.5
+
+Companion messages use a bounded control queue and serialized TLS writes. Files use a separate authenticated lane, 64 KiB chunks, explicit receive approval, length/SHA-256 checks and temporary files. There is no fixed file-size cap; storage and filesystem limits apply. Requested gallery originals use a short-lived, single-use reservation tied to the PC's Save action. Gallery pages are limited to 24 items and thumbnails are bounded/cached; MediaStore observation is event driven and requires phone opt-in plus the actual OS grant. No background bulk photo copy is performed.
+
+Notification sync requires Android notification-listener consent and a separate Synqora opt-in. The bridge keeps source PendingIntents on the phone, exposes opaque action IDs/versions, validates current source notifications before invoking an action, and uses Android RemoteInput for replies. Secret notifications, group summaries and Synqora's own notifications are excluded. Notification and call-log content is session-only on the PC; explicitly received files are saved to disk. The paired PC can see shared content and invoke enabled actions, so approve only a computer you trust.
+
+Cellular history and direct dialing have separate opt-ins and READ_CALL_LOG/CALL_PHONE checks. Direct dialing is a real TelecomManager request; it does not by itself transport call audio. The optional MSIX implements Windows HFP line discovery, dialing, active-call events, answer/end/mute and audio-route controls. Package/capability acceptance and physical Bluetooth audio remain unverified. WhatsApp private history and direct outgoing calls are unavailable. See [CALLING.md](CALLING.md).
+
+Idle companion mode holds no media wake lock and pings every 60 seconds. Active media uses a two-second heartbeat with a 12-second liveness check. Capture closes on any lost/error/disconnected session, failed media lane or task removal. Reconnecting never restarts capture without user action. Battery saver/thermal pressure reduces capture/decorative work; critical thermal status stops camera capture. Multi-hour physical battery life still needs measurement.
+
+Windows supports minimize/close to its notification-area icon, with Open, Connect, Disconnect and Quit actions. A taskbar-embedded widget is not implemented; Microsoft's supported Widgets API targets the Widgets board rather than arbitrary inline taskbar content.

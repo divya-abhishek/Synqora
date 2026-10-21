@@ -57,13 +57,16 @@ class SynqoraState(private val app: Application) : AndroidViewModel(app) {
     private val prefs = app.getSharedPreferences("synqora", 0)
     val session: SynqoraSession = LanSession(beforeConnect = { SessionService.ensure(app) }) { app.getSystemService(android.os.BatteryManager::class.java).getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CAPACITY).takeIf { it in 0..100 } }
     val audio = AudioMonitor()
+    val companion = Companion(app, session as LanSession, viewModelScope)
+    val gallery = GallerySync(app, session as LanSession, companion, viewModelScope)
+    val calls = CallBridge(app, session as LanSession, companion, viewModelScope)
     val camera = CameraCapture(app, session::video) { SessionService.ensure(app, camera = true, microphone = microphoneRunning) }
     var microphoneRunning by mutableStateOf(false); private set
     var microphoneError by mutableStateOf<String?>(null); private set
     var displayDimmed by mutableStateOf(false); private set
     fun dimDisplay(value: Boolean) { displayDimmed = value }
     val status = combine(session.device.map { it.phase to it.name }.distinctUntilChanged(), camera.state.map { it.active }.distinctUntilChanged(), snapshotFlow { microphoneRunning }) { device, cam, mic -> SessionStatus(device.first, device.second, mic, cam) }.stateIn(viewModelScope, SharingStarted.Eagerly, SessionStatus())
-    var theme by mutableStateOf(prefs.getString("theme", "System")!!); private set
+    val theme = "Dark"
     var reduceMotion by mutableStateOf(prefs.getBoolean("motion", false)); private set
     var reduceTransparency by mutableStateOf(prefs.getBoolean("transparency", false)); private set
     var effects by mutableStateOf(prefs.getString("effects", "Balanced")!!); private set
@@ -75,6 +78,13 @@ class SynqoraState(private val app: Application) : AndroidViewModel(app) {
     private val captureTransition = Mutex()
     private var captureGeneration = 0
     init {
+        // Capture belongs to the live session, not the lifetime of the application.
+        // Reconnecting never restarts camera or microphone without a fresh user action.
+        viewModelScope.launch {
+            session.device.map { it.phase }.distinctUntilChanged().collect { phase ->
+                if (phase != ConnectionPhase.Connected) stopCapture()
+            }
+        }
         viewModelScope.launch {
             var sendingMic = false; var sendingCamera = false
             combine(session.device.map { it.phase == ConnectionPhase.Connected }.distinctUntilChanged(), camera.state.map { it.active && it.ready }.distinctUntilChanged(), snapshotFlow { microphoneRunning }) { connected, cam, mic -> (connected && mic) to (connected && cam) }.collect { (mic, cam) ->
@@ -87,11 +97,14 @@ class SynqoraState(private val app: Application) : AndroidViewModel(app) {
     }
     fun mute() { muted = !muted; audio.muted = muted }
     fun startMicrophone() {
+        if (session.device.value.phase != ConnectionPhase.Connected) {
+            microphoneError = "Connect your computer before starting the microphone."; return
+        }
         SessionService.ensure(app, microphone = true, camera = camera.state.value.active)
         val generation = ++captureGeneration
         microphoneError = null; microphoneRunning = true; audio.gain = gain
         viewModelScope.launch { captureTransition.withLock {
-            if (generation != captureGeneration) return@withLock
+            if (generation != captureGeneration || session.device.value.phase != ConnectionPhase.Connected) return@withLock
             audio.stop()
             if (generation != captureGeneration) return@withLock
             session.microphone(true)
@@ -103,7 +116,8 @@ class SynqoraState(private val app: Application) : AndroidViewModel(app) {
         microphoneRunning = false; session.microphone(false)
         viewModelScope.launch { captureTransition.withLock { if (generation == captureGeneration) audio.stop() } }
     }
-    fun theme(value: String) { theme = value; prefs.edit().putString("theme", value).apply() }
+    fun stopCapture() { stopMicrophone(); camera.stop(); displayDimmed = false }
+    fun startCamera() { if (session.device.value.phase == ConnectionPhase.Connected) camera.start() }
     fun motion(value: Boolean) { reduceMotion = value; prefs.edit().putBoolean("motion", value).apply() }
     fun transparency(value: Boolean) { reduceTransparency = value; prefs.edit().putBoolean("transparency", value).apply() }
     fun effects(value: String) { effects = value; prefs.edit().putString("effects", value).apply() }

@@ -33,10 +33,12 @@ Copy-Item (Join-Path $taskRoot 'THIRD-PARTY-NOTICES.md') -Destination $publishFo
 Copy-Item (Join-Path $taskRoot 'LICENSE') -Destination $publishFolder
 $documentation = Join-Path $publishFolder 'docs'
 New-Item -ItemType Directory -Path $documentation -Force | Out-Null
-foreach ($guide in @('INSTALLATION.md', 'VALIDATION.md', 'DESIGN.md', 'DEVICE-INTEGRATION.md', 'SCREENSHOTS.md')) {
+foreach ($guide in @('INSTALLATION.md', 'VALIDATION.md', 'DESIGN.md', 'DEVICE-INTEGRATION.md', 'CALLING.md', 'SCREENSHOTS.md')) {
     Copy-Item (Join-Path $taskRoot "docs\$guide") -Destination $documentation
 }
 Copy-Item (Join-Path $taskRoot 'docs\screenshots') -Destination $documentation -Recurse -Force
+Get-ChildItem -LiteralPath (Join-Path $documentation 'screenshots') -Filter '*-light-*.png' | ForEach-Object { Remove-Item -LiteralPath $_.FullName }
+Copy-Item (Join-Path $taskRoot 'docs\validation') -Destination $documentation -Recurse -Force
 # Redistribute the original vendor archive unchanged. Its installer is not run by
 # this MSI. The app explains the separate vendor setup, attribution and donationware.
 $microphoneArchive = Join-Path $localFolder 'vbcable\VBCABLE_Driver_Pack45.zip'

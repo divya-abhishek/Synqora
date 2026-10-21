@@ -1,5 +1,7 @@
 param([string]$Adb = 'adb', [switch]$PerformanceOnly, [switch]$NoBuild, [string]$Output = 'previews')
 $ErrorActionPreference = 'Stop'
+$testSerial = (& $Adb get-serialno).Trim()
+if ($testSerial -notlike 'emulator-*') { throw 'Run backend fixtures only on a disposable Android emulator.' }
 $taskRoot = Split-Path -Parent $PSScriptRoot
 $localFolder = Join-Path $taskRoot '.local'
 New-Item -ItemType Directory -Path $localFolder -Force | Out-Null
@@ -14,6 +16,7 @@ if (Test-Path -LiteralPath $invitePath) { Remove-Item -LiteralPath $invitePath }
 $probe = Join-Path $taskRoot 'tests\BackendProbe\bin\Release\net8.0\BackendProbe.exe'
 $hostProcess = Start-Process -FilePath $probe -ArgumentList '--serve', ('"'+$localFolder+'"') -WindowStyle Hidden -PassThru
 try {
+    if ($PerformanceOnly) { & $Adb shell wm size 1080x2400; & $Adb shell wm density 420 }
     for ($i=0; $i -lt 50; $i++) { if (Test-Path -LiteralPath $invitePath) { break }; Start-Sleep -Milliseconds 100 }
     $invite = [IO.File]::ReadAllText($invitePath)
     $address = [Uri]$invite
@@ -54,6 +57,7 @@ try {
     if ($PerformanceOnly) { Write-Output 'Real Android input/frame-clock workflow completed during measured simultaneous streaming.' }
     else { Write-Output 'Real Android capture, pinned TLS transport, video, audio, raw pointer, click, live IME typing and key delivery passed against the isolated receiver.' }
 } finally {
+    if ($PerformanceOnly) { & $Adb shell wm size reset; & $Adb shell wm density reset }
     [IO.File]::WriteAllText($stopFile, 'stop')
     if ($port) { & $Adb reverse --remove "tcp:$port" }
     $hostProcess.WaitForExit(10000) | Out-Null

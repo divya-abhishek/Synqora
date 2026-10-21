@@ -1,5 +1,7 @@
 param([string]$Adb = 'adb', [string]$Output = 'previews')
 $ErrorActionPreference = 'Stop'
+$testSerial = (& $Adb get-serialno).Trim()
+if ($testSerial -notlike 'emulator-*') { throw 'Run receiver fixtures only on a disposable Android emulator.' }
 $taskRoot = Split-Path -Parent $PSScriptRoot
 $folder = Join-Path $taskRoot '.local\native-receiver'
 New-Item -ItemType Directory -Path $folder -Force | Out-Null
@@ -9,7 +11,7 @@ foreach ($name in @('backend-invite.txt', 'windows-receiver-metrics.json', 'wind
 }
 dotnet build (Join-Path $taskRoot 'windows\Synqora\Synqora.csproj') -c Release -v:q
 if ($LASTEXITCODE -ne 0) { throw 'WinUI build failed.' }
-$exe = Join-Path $taskRoot 'windows\Synqora\bin\Release\net8.0-windows10.0.19041.0\win-x64\Synqora.exe'
+$exe = Join-Path $taskRoot 'windows\Synqora\bin\Release\net8.0-windows10.0.26100.0\win-x64\Synqora.exe'
 $worker = Start-Process -FilePath $exe -ArgumentList '--receiver-test', ('"'+$folder+'"'), '--background-capture' -WindowStyle Hidden -PassThru
 try {
     $invitePath = Join-Path $folder 'backend-invite.txt'

@@ -30,6 +30,9 @@ class LanSession(private val beforeConnect: () -> Unit = {}, private val battery
     private var audioLane: Lane? = null
     private var videoLane: Lane? = null
     private var control = Channel<Packet>(128)
+    private val heartbeatWake = Channel<Unit>(Channel.CONFLATED)
+    @Volatile private var lastPongAt = 0L
+    @Volatile var onCompanion: (JSONObject) -> Unit = {}
     @Volatile private var microphone = false
     @Volatile private var camera = false
     @Volatile private var latency: Int? = null
@@ -64,8 +67,9 @@ class LanSession(private val beforeConnect: () -> Unit = {}, private val battery
                     val input = DataInputStream(s.inputStream); val output = DataOutputStream(s.outputStream)
                     write(output, Packet(1, json("key" to p.key, "role" to "control", "name" to "${Build.MANUFACTURER} ${Build.MODEL}", "battery" to batteryLevel())))
                     val welcome = read(input); check(welcome.kind == 2) { "PC rejected the connection." }
+                    s.soTimeout = 0
                     val data = JSONObject(String(welcome.payload, Charsets.UTF_8)); sessionId = data.getString("session")
-                    var previousPong = SystemClock.elapsedRealtime(); var previousFrames = 0L
+                    var previousPong = SystemClock.elapsedRealtime(); var previousFrames = 0L; lastPongAt = previousPong
                     device.value = DeviceState(name = data.getString("name"), identity = "Windows PC · encrypted LAN", phase = ConnectionPhase.Connected, controlsAllowed = data.optBoolean("controlsAllowed"))
                     control = Channel(128)
                   coroutineScope {
@@ -74,15 +78,22 @@ class LanSession(private val beforeConnect: () -> Unit = {}, private val battery
                         finally { s.close() } // Wake the blocking reader on writer failure/cancellation.
                     }
                     val heartbeat = launch {
-                        while (isActive) { control.send(Packet(6, json("timestamp" to SystemClock.elapsedRealtime()))); publishState(); delay(1000) }
+                        while (isActive) {
+                            if ((microphone || camera) && SystemClock.elapsedRealtime() - lastPongAt > 12000) { s.close(); error("The PC stopped responding. Capture was stopped.") }
+                            // Never let a full input queue suspend the capture liveness check.
+                            control.trySend(Packet(6, json("timestamp" to SystemClock.elapsedRealtime()))); publishState()
+                            withTimeoutOrNull(if (microphone || camera) 2000L else 60000L) { heartbeatWake.receive() }
+                        }
                     }
                     try {
                         while (isActive) {
                             val frame = read(input)
+                            if (frame.kind == 10) onCompanion(JSONObject(String(frame.payload, Charsets.UTF_8)))
                             if (frame.kind == 7) {
                                 val pong = JSONObject(String(frame.payload, Charsets.UTF_8))
                                 latency = (SystemClock.elapsedRealtime() - pong.getLong("timestamp")).coerceIn(0, 10000).toInt()
                                 val now = SystemClock.elapsedRealtime(); val frames = pong.optLong("receivedVideoFrames")
+                                lastPongAt = now
                                 val rate = ((frames - previousFrames) * 1000 / (now - previousPong).coerceAtLeast(1)).toInt().coerceAtLeast(0)
                                 previousPong = now; previousFrames = frames
                                 device.update { it.copy(latencyMs = latency, controlsAllowed = pong.optBoolean("controlsAllowed"), receivedAudioBytes = pong.optLong("receivedAudioBytes"), receivedVideoFrames = frames, receivedVideoFps = rate) }
@@ -104,6 +115,8 @@ class LanSession(private val beforeConnect: () -> Unit = {}, private val battery
     private suspend fun disconnectNow() { socket?.close(); connection?.cancelAndJoin(); connection = null; stopLanes() }
     private fun stopLanes() = synchronized(laneGate) { audioLane?.close(); audioLane = null; videoLane?.close(); videoLane = null; microphone = false; camera = false }
     override fun microphone(active: Boolean) {
+        if (active && !microphone && !camera) lastPongAt = SystemClock.elapsedRealtime()
+        heartbeatWake.trySend(Unit)
         microphone = active && device.value.phase == ConnectionPhase.Connected
         synchronized(laneGate) {
             if (microphone && audioLane == null) audioLane = lane("audio", 3).also { it.job.start() }
@@ -112,6 +125,8 @@ class LanSession(private val beforeConnect: () -> Unit = {}, private val battery
         publishState()
     }
     override fun camera(active: Boolean) {
+        if (active && !microphone && !camera) lastPongAt = SystemClock.elapsedRealtime()
+        heartbeatWake.trySend(Unit)
         camera = active && device.value.phase == ConnectionPhase.Connected
         synchronized(laneGate) {
             if (camera && videoLane == null) videoLane = lane("video", 1).also { it.job.start() }
@@ -145,7 +160,10 @@ class LanSession(private val beforeConnect: () -> Unit = {}, private val battery
                 write(output, Packet(1, json("key" to p.key, "role" to role, "session" to activeSession)))
                 check(read(input).kind == 2) { "Media connection rejected." }
                 for (packet in queue) write(output, packet)
-            } catch (e: Exception) { if (isActive && e !is CancellationException) device.update { it.copy(error = "$role stream stopped. Stop and restart capture to retry.") } }
+            } catch (e: Exception) { if (isActive && e !is CancellationException) {
+                device.update { it.copy(phase = ConnectionPhase.Error, error = "$role stream stopped. Reconnect to try again.") }
+                socket?.close() // Losing a media lane also releases capture via session state.
+            } }
             finally {
                 s?.close(); queue.close()
                 synchronized(laneGate) {
@@ -202,7 +220,7 @@ class LanSession(private val beforeConnect: () -> Unit = {}, private val battery
     }
     private fun read(input: DataInputStream): Packet {
         val kind = input.readUnsignedByte(); val length = input.readInt()
-        require(kind in 1..8 && length in 0..16384) { "Invalid PC control frame." }
+        require(kind in 1..12 && length in 0..(if (kind in 10..11) 65536 else 16384)) { "Invalid PC control frame." }
         return Packet(kind, ByteArray(length).also { input.readFully(it) })
     }
     private fun write(output: DataOutputStream, packet: Packet) {
@@ -210,4 +228,19 @@ class LanSession(private val beforeConnect: () -> Unit = {}, private val battery
         output.write(frame); output.flush()
     }
     private fun json(vararg pairs: Pair<String, Any?>) = JSONObject().apply { pairs.forEach { put(it.first, it.second ?: JSONObject.NULL) } }.toString().toByteArray(Charsets.UTF_8)
+    fun companion(message: JSONObject): Boolean {
+        val bytes = message.toString().toByteArray(Charsets.UTF_8)
+        return bytes.size <= 65536 && device.value.phase == ConnectionPhase.Connected && control.trySend(Packet(10, bytes)).isSuccess
+    }
+    fun openFile(id: String, upload: Boolean): SSLSocket {
+        val p = address ?: error("Connect a computer first.")
+        check(device.value.phase == ConnectionPhase.Connected)
+        val s = open(p)
+        try {
+            s.soTimeout = 30000
+            write(DataOutputStream(s.outputStream), Packet(1, json("key" to p.key, "role" to "file", "session" to sessionId, "transfer" to id, "direction" to if (upload) "upload" else "download")))
+            check(read(DataInputStream(s.inputStream)).kind == 2) { "File transfer was rejected." }
+            return s
+        } catch (e: Exception) { s.close(); throw e }
+    }
 }

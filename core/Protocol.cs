@@ -3,7 +3,7 @@ using System.Text.Json;
 
 namespace Synqora.Core;
 
-public enum FrameKind : byte { Hello = 1, Welcome = 2, Command = 3, Audio = 4, Video = 5, Ping = 6, Pong = 7, State = 8, OrientedVideo = 9 }
+public enum FrameKind : byte { Hello = 1, Welcome = 2, Command = 3, Audio = 4, Video = 5, Ping = 6, Pong = 7, State = 8, OrientedVideo = 9, Companion = 10, FileChunk = 11, FileEnd = 12 }
 public sealed record Frame(FrameKind Kind, byte[] Payload);
 public static class Wire
 {
@@ -16,7 +16,7 @@ public static class Wire
         var kind = (FrameKind)header[0];
         if (!Enum.IsDefined(kind)) throw new InvalidDataException("Unknown frame kind.");
         var size = BinaryPrimitives.ReadInt32BigEndian(header.AsSpan(1));
-        var limit = kind switch { FrameKind.Audio => 16384, FrameKind.Video or FrameKind.OrientedVideo => MaxFrame, _ => 16384 };
+        var limit = kind switch { FrameKind.Audio => 16384, FrameKind.FileChunk => 65536, FrameKind.Companion => 65536, FrameKind.Video or FrameKind.OrientedVideo => MaxFrame, _ => 16384 };
         if (size < 0 || size > limit) throw new InvalidDataException("Frame exceeds channel limit.");
         var bytes = new byte[size]; await stream.ReadExactlyAsync(bytes, ct); return new(kind, bytes);
     }

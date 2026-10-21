@@ -1,0 +1,45 @@
+{
+  "version": "0.5.0",
+  "artifacts": [
+    {
+      "name": "Synqora-0.5.0-dev-android.apk",
+      "bytes": 3820057,
+      "sha256": "0dbeeba8dc447d9aefcc1b0fb690823c70766834e3a7881b23cde3c18feb21bc"
+    },
+    {
+      "name": "Synqora-0.5.0-dev-win-x64.msi",
+      "bytes": 108712380,
+      "sha256": "f5e70a031d10fd3dddec8c7a5fce2a1c9693d619c65bbe9d57ffb34d2d810ad4"
+    },
+    {
+      "name": "Synqora-0.5.0-dev-win-x64-portable.zip",
+      "bytes": 139712583,
+      "sha256": "6ef1ad2b636d9219d9c40fe95d51d9b67a51f1650a0189eadb4087ec394a41c3"
+    },
+    {
+      "name": "Synqora-0.5.0-experimental-calling-x64.msix",
+      "bytes": 138800154,
+      "sha256": "e5e2769d993cfcf7e7ed583d894b4d2865a9c1ee5ac99a89165af342facbdb53"
+    },
+    {
+      "name": "Synqora-0.5.0-preview-signing.cer",
+      "bytes": 997,
+      "sha256": "1be50a1bb22951f67d6350de4888e569a77b877606cf28f55328546e7e1311df"
+    }
+  ],
+  "windowsPayloadFilesVerified": 856,
+  "windowsScreenRendersPerPayload": 10,
+  "msixBlockMapFilesVerified": 860,
+  "msixApplicationMatchesPublished": true,
+  "msixInstalled": false,
+  "certificateTrustChanged": false,
+  "bluetoothHardwareTested": false,
+  "androidReleaseSmoke": {
+    "version": "0.5.0",
+    "debuggable": false,
+    "dashboard": true,
+    "settings": true,
+    "returnHome": true,
+    "emulatorOnly": true
+  }
+}

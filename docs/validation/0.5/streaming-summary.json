@@ -1,0 +1,21 @@
+{
+  "scenario": "API 35 x86_64 emulator, SwiftShader, 1920x1080/density 320 (emulator default landscape, before the final navigation inset correction); prebuilt debug instrumentation; 24 real navigation touches during actual simultaneous CameraX/AudioRecord/TLS streaming",
+  "frames": 550,
+  "jankyFrames": 134,
+  "jankPercent": 24.36,
+  "p50Ms": 34,
+  "p95Ms": 85,
+  "p99Ms": 150,
+  "receivedVideoFrames": 270,
+  "receivedVideoFps": 15.077257239301625,
+  "captureSample": {
+    "targetFps": 30,
+    "encodedFps": 23,
+    "width": 1280,
+    "height": 720,
+    "encodeMs": 40
+  },
+  "gpuPercentilesUsable": false,
+  "physicalDeviceTested": false,
+  "frameTimeTargetMet": false
+}

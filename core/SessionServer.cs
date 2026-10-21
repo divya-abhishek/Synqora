@@ -7,13 +7,14 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
+using System.Threading.Channels;
 
 namespace Synqora.Core;
 
 public sealed record PeerState(string Name = "", bool Connected = false, bool Microphone = false, bool Camera = false, bool ControlsAllowed = false, int? Battery = null, int? LatencyMs = null, string? Error = null);
 public interface IInputSink { void Move(float dx, float dy); void Click(bool right); void Scroll(float delta); void Text(string text); void Key(string key, int modifiers); void Media(string command); void Volume(float level); }
 
-// Three separately authenticated TLS lanes prevent video backpressure from holding up input/audio.
+// Separately authenticated control, audio, video and file lanes isolate backpressure.
 public sealed class SessionServer(IInputSink input) : IAsyncDisposable
 {
     private readonly X509Certificate2 certificate = CreateCertificate();
@@ -25,6 +26,7 @@ public sealed class SessionServer(IInputSink input) : IAsyncDisposable
     private readonly HashSet<TcpClient> clients = [];
     private TcpListener? listener;
     private string? sessionId;
+    private Channel<byte[]>? companionOutput;
     private long sessionAudioOrigin, sessionVideoOrigin;
     private DateTimeOffset expires;
     private PeerState state = new();
@@ -38,6 +40,13 @@ public sealed class SessionServer(IInputSink input) : IAsyncDisposable
     public event Action<byte[]>? Video;
     public event Action<byte[], int>? OrientedVideo;
     public event Action<string>? Diagnostic;
+    public event Action<JsonElement>? Companion;
+    public Func<Stream, JsonElement, CancellationToken, Task>? FileLane { get; set; }
+    public bool SendCompanion(object message) {
+        var bytes = Wire.Encode(message);
+        if (bytes.Length > 65536) return false;
+        lock (gate) return sessionId != null && companionOutput?.Writer.TryWrite(bytes) == true;
+    }
     public string Fingerprint => Convert.ToHexString(SHA256.HashData(certificate.RawData));
     public string Invitation(string? host = null) { lock (gate) { if (sessionId == null) { secret = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)); expires = DateTimeOffset.UtcNow.AddMinutes(10); } return $"synqora://pair?host={Uri.EscapeDataString(host ?? LocalAddress())}&port={Port}&pin={Fingerprint}&key={secret}"; } }
     public void Start(int port = 0, bool loopbackOnly = false)
@@ -90,24 +99,47 @@ public sealed class SessionServer(IInputSink input) : IAsyncDisposable
                 sessionId = Convert.ToHexString(RandomNumberGenerator.GetBytes(24));
                 sessionAudioOrigin = AudioBytes; sessionVideoOrigin = VideoFrames;
             }
-            else if (role is not ("audio" or "video") || sessionId == null || h.GetProperty("session").GetString() != sessionId || !mediaRoles.Add(role)) throw new AuthenticationException("Media lane rejected.");
+            else if (role is not ("audio" or "video" or "file") || sessionId == null || h.GetProperty("session").GetString() != sessionId || !mediaRoles.Add(role)) throw new AuthenticationException("Media lane rejected.");
             ownSession = sessionId!;
         }
+        using var outgoingLifetime = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token);
+        var writeGate = new SemaphoreSlim(1);
+        async Task WriteControl(FrameKind kind, byte[] bytes) {
+            await writeGate.WaitAsync(outgoingLifetime.Token);
+            try { await Wire.Write(stream, kind, bytes, outgoingLifetime.Token); }
+            finally { writeGate.Release(); }
+        }
+        Task? outgoing = null;
         try
         {
             await Wire.Write(stream, FrameKind.Welcome, Wire.Encode(new { session = ownSession, name = Environment.MachineName, controlsAllowed = State.ControlsAllowed, sampleRate = 48000, channels = 1 }), lifetime.Token);
-            if (control) UpdateSession(ownSession, s => s with { Connected = true, Name = Clean(h.TryGetProperty("name", out var n) ? n.GetString() : null), Battery = h.TryGetProperty("battery", out var b) && b.ValueKind == JsonValueKind.Number && b.TryGetInt32(out var battery) ? Math.Clamp(battery, 0, 100) : null, Error = null });
+            if (role == "file") {
+                var handler = FileLane ?? throw new InvalidDataException("File transfer unavailable.");
+                await handler(stream, h, lifetime.Token); return;
+            }
+            if (control) {
+                var output = Channel.CreateBounded<byte[]>(32);
+                lock (gate) companionOutput = output;
+                outgoing = Task.Run(async () => {
+                    try { await foreach (var bytes in output.Reader.ReadAllAsync(outgoingLifetime.Token)) await WriteControl(FrameKind.Companion, bytes); }
+                    catch (Exception e) when (e is IOException or OperationCanceledException or ObjectDisposedException) { client.Close(); }
+                });
+                UpdateSession(ownSession, s => s with { Connected = true, Name = Clean(h.TryGetProperty("name", out var n) ? n.GetString() : null), Battery = h.TryGetProperty("battery", out var b) && b.ValueKind == JsonValueKind.Number && b.TryGetInt32(out var battery) ? Math.Clamp(battery, 0, 100) : null, Error = null });
+            }
             int commands = 0; long second = Environment.TickCount64 / 1000;
             while (!lifetime.IsCancellationRequested)
             {
-                using var timeout = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token); timeout.CancelAfter(TimeSpan.FromSeconds(15));
+                using var timeout = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token);
+                // Let an idle companion sleep in Doze without a CPU lock or polling alarm.
+                // Active capture still has a short liveness deadline.
+                timeout.CancelAfter(TimeSpan.FromSeconds(control && !State.Microphone && !State.Camera ? 43200 : 15));
                 var frame = await Wire.Read(stream, timeout.Token);
                 lock (gate) if (sessionId != ownSession) break;
                 if (frame.Kind == FrameKind.Ping) {
                     using var ping = JsonDocument.Parse(frame.Payload);
                     byte[] status;
                     lock (gate) status = Wire.Encode(new { timestamp = ping.RootElement.GetProperty("timestamp").GetInt64(), controlsAllowed = state.ControlsAllowed, receivedAudioBytes = AudioBytes - sessionAudioOrigin, receivedVideoFrames = VideoFrames - sessionVideoOrigin });
-                    await Wire.Write(stream, FrameKind.Pong, status, lifetime.Token); continue;
+                    await WriteControl(FrameKind.Pong, status); continue;
                 }
                 if (role == "audio" && frame.Kind == FrameKind.Audio)
                 {
@@ -126,6 +158,10 @@ public sealed class SessionServer(IInputSink input) : IAsyncDisposable
                     lock (gate) { if (sessionId != ownSession) break; VideoFrames++; Video?.Invoke(jpeg); OrientedVideo?.Invoke(jpeg, rotation); } continue;
                 }
                 if (!control) throw new InvalidDataException("Unexpected media lane frame.");
+                if (frame.Kind == FrameKind.Companion) {
+                    using var doc = JsonDocument.Parse(frame.Payload);
+                    Companion?.Invoke(doc.RootElement.Clone()); continue;
+                }
                 if (frame.Kind == FrameKind.State)
                 {
                     using var doc = JsonDocument.Parse(frame.Payload); var s = doc.RootElement;
@@ -165,10 +201,12 @@ public sealed class SessionServer(IInputSink input) : IAsyncDisposable
         }
         finally
         {
+            outgoingLifetime.Cancel();
+            if (outgoing != null) { try { await outgoing; } catch (OperationCanceledException) { } }
             lock (gate) {
                 if (sessionId == ownSession) {
-                    if (control) { sessionId = null; mediaRoles.Clear(); foreach (var peer in clients.Where(p => p != client)) peer.Close(); Update(_ => new()); }
-                    else { mediaRoles.Remove(role); Update(s => role == "audio" ? s with { Microphone = false } : s with { Camera = false }); }
+                    if (control) { companionOutput?.Writer.TryComplete(); companionOutput = null; sessionId = null; mediaRoles.Clear(); foreach (var peer in clients.Where(p => p != client)) peer.Close(); Update(_ => new()); }
+                    else { mediaRoles.Remove(role); if (role != "file") Update(s => role == "audio" ? s with { Microphone = false } : s with { Camera = false }); }
                 }
             }
         }

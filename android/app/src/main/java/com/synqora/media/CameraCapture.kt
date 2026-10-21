@@ -10,6 +10,11 @@ import android.hardware.display.DisplayManager
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
+import android.os.Build
+import android.os.PowerManager
+import android.content.BroadcastReceiver
+import android.content.Intent
+import android.content.IntentFilter
 import android.util.Size
 import android.util.Range
 import android.view.Display
@@ -33,11 +38,15 @@ import java.util.concurrent.Executors
 
 data class CameraState(val active: Boolean = false, val ready: Boolean = false, val error: String? = null, val targetFps: Int = 0, val actualFps: Int = 0, val width: Int = 0, val height: Int = 0, val encodeMs: Int = 0)
 
-/** Activity-owned capture; a page owns only its preview surface, never the encoder. */
+/** Session-service-owned capture; a page owns only its preview surface, never the encoder. */
 @androidx.annotation.OptIn(markerClass = [ExperimentalCamera2Interop::class])
 class CameraCapture(context: Context, private val sendFrame: (ByteArray, Int) -> Unit, private val beginSession: () -> Unit = {}) {
     private val app = context.applicationContext
     private val main = ContextCompat.getMainExecutor(app)
+    private val power = app.getSystemService(PowerManager::class.java)
+    private var limited = power.isPowerSaveMode || power.currentThermalStatus >= PowerManager.THERMAL_STATUS_SEVERE
+    private val thermalListener = PowerManager.OnThermalStatusChangedListener { main.execute { powerChanged() } }
+    private val powerReceiver = object : BroadcastReceiver() { override fun onReceive(context: Context?, intent: Intent?) { powerChanged() } }
     private val encoder = Executors.newSingleThreadExecutor()
     private val _state = MutableStateFlow(CameraState())
     val state = _state.asStateFlow()
@@ -76,7 +85,17 @@ class CameraCapture(context: Context, private val sendFrame: (ByteArray, Int) ->
             }
         }
     }
-    init { displays.registerDisplayListener(rotationListener, Handler(Looper.getMainLooper())) }
+    init {
+        displays.registerDisplayListener(rotationListener, Handler(Looper.getMainLooper()))
+        power.addThermalStatusListener(thermalListener)
+        ContextCompat.registerReceiver(app, powerReceiver, IntentFilter(PowerManager.ACTION_POWER_SAVE_MODE_CHANGED), ContextCompat.RECEIVER_NOT_EXPORTED)
+    }
+    private fun powerChanged() {
+        if (closed) return
+        if (power.currentThermalStatus >= PowerManager.THERMAL_STATUS_CRITICAL && _state.value.active) { stop(); _state.value = CameraState(error = "Camera stopped because this phone is too hot. Let it cool before restarting."); return }
+        val next = power.isPowerSaveMode || power.currentThermalStatus >= PowerManager.THERMAL_STATUS_SEVERE
+        if (next != limited) { limited = next; if (_state.value.active) bind() }
+    }
 
     fun attach(lifecycle: LifecycleOwner) {
         if (owner === lifecycle) return
@@ -99,7 +118,7 @@ class CameraCapture(context: Context, private val sendFrame: (ByteArray, Int) ->
         generation++; transmit = false; releaseUseCases()
         _state.value = CameraState()
     }
-    fun close() { closed = true; stop(); displays.unregisterDisplayListener(rotationListener); encoder.shutdown() }
+    fun close() { closed = true; stop(); displays.unregisterDisplayListener(rotationListener); power.removeThermalStatusListener(thermalListener); app.unregisterReceiver(powerReceiver); encoder.shutdown() }
     fun mode(value: String) { if (value == mode) return; mode = value; if (_state.value.active) bind() }
     fun flip() { front = !front; if (_state.value.active) bind() }
     fun attachPreview(target: PreviewView) {
@@ -144,10 +163,10 @@ class CameraCapture(context: Context, private val sendFrame: (ByteArray, Int) ->
                 val wanted = if (front) CameraSelector.DEFAULT_FRONT_CAMERA else CameraSelector.DEFAULT_BACK_CAMERA
                 lens = if (cameras.hasCamera(wanted)) wanted else if (front) CameraSelector.DEFAULT_BACK_CAMERA else CameraSelector.DEFAULT_FRONT_CAMERA
                 val info = lens.filter(cameras.availableCameraInfos).first()
-                val requestedFps = if (mode.contains("60")) 60 else 30
+                val requestedFps = if (limited) 30 else if (mode.contains("60")) 60 else 30
                 val ranges = Camera2CameraInfo.from(info).getCameraCharacteristic(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES)?.toList().orEmpty()
                 fpsRange = ranges.filter { it.upper <= requestedFps }.maxWithOrNull(compareBy<Range<Int>> { it.upper }.thenBy { it.lower }) ?: ranges.minByOrNull { it.upper } ?: Range(30, 30)
-                val resolution = if (mode.startsWith("Economy")) Size(640, 360) else Size(1280, 720)
+                val resolution = if (limited || mode.startsWith("Economy")) Size(640, 360) else Size(1280, 720)
                 val selector = ResolutionSelector.Builder().setAspectRatioStrategy(AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY).setResolutionStrategy(ResolutionStrategy(resolution, ResolutionStrategy.FALLBACK_RULE_CLOSEST_LOWER_THEN_HIGHER)).build()
                 // Keep sensor YUV until after the transmission/rate gate. RGBA output makes
                 // CameraX convert even discarded frames and local-preview-only analysis.

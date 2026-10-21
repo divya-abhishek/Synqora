@@ -24,8 +24,8 @@ class StreamingFrameTest {
         val ui = instrumentation.uiAutomation
         ui.grantRuntimePermission(context.packageName, Manifest.permission.RECORD_AUDIO)
         ui.grantRuntimePermission(context.packageName, Manifest.permission.CAMERA)
-        fun find(label: String, description: Boolean = false, partial: Boolean = false, visibleOnly: Boolean = true): AccessibilityNodeInfo {
-            val until = SystemClock.uptimeMillis() + 20000
+        fun find(label: String, description: Boolean = false, partial: Boolean = false, visibleOnly: Boolean = true, timeoutMs: Long = 20000): AccessibilityNodeInfo {
+            val until = SystemClock.uptimeMillis() + timeoutMs
             while (SystemClock.uptimeMillis() < until) {
                 fun scan(node: AccessibilityNodeInfo?): AccessibilityNodeInfo? {
                     if (node == null) return null
@@ -55,7 +55,17 @@ class StreamingFrameTest {
             // action; measured bottom-navigation taps below still inject actual touch events.
             val deadline = SystemClock.uptimeMillis() + 10000
             while (SystemClock.uptimeMillis() < deadline) {
-                var node = find(label, visibleOnly = false)
+                val candidate = runCatching { find(label, visibleOnly = false, timeoutMs = 700) }.getOrNull()
+                if (candidate == null) {
+                    fun scroll(node: AccessibilityNodeInfo?): Boolean {
+                        if (node == null) return false
+                        if (node.isScrollable && node.performAction(if (deadline - SystemClock.uptimeMillis() > 4000) AccessibilityNodeInfo.ACTION_SCROLL_FORWARD else AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD)) return true
+                        for (i in 0 until node.childCount) if (scroll(node.getChild(i))) return true
+                        return false
+                    }
+                    scroll(ui.rootInActiveWindow); Thread.sleep(100); continue
+                }
+                var node: AccessibilityNodeInfo = requireNotNull(candidate)
                 node.performAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_SHOW_ON_SCREEN.id)
                 while (!node.isClickable && node.parent != null) node = node.parent
                 if (node.isClickable && node.isEnabled) {
@@ -74,22 +84,29 @@ class StreamingFrameTest {
             check(input.isEditable) { "Pairing text field is not exposed as editable" }
             check(input.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, Bundle().apply { putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, invitation.readText()) }))
             select("Connect")
-            find("Connected to ", partial = true); tap("Done")
+            find("Connected securely")
             select("Microphone"); select("Start microphone")
             find("Streaming to ", partial = true)
-            tap("Back to Home", description = true); select("Webcam"); tap("Start camera", description = true)
-            find("Streaming to PC"); Thread.sleep(2500)
+            tap("Back to Device", description = true); select("Webcam"); tap("Start camera", description = true)
+            // SurfaceView can obscure the accessibility visibility of an overlaid status pill.
+            // Verify real capture and acknowledged receiver frames instead of waiting on that label.
+            lateinit var model: com.synqora.data.SynqoraState
+            it.onActivity { activity -> model = (activity.application as SynqoraApplication).state }
+            val readyBy = SystemClock.uptimeMillis() + 20000
+            while (SystemClock.uptimeMillis() < readyBy && (!model.camera.state.value.ready || model.session.device.value.receivedVideoFrames < 5)) Thread.sleep(100)
+            check(model.camera.state.value.ready && model.session.device.value.receivedVideoFrames >= 5) { "Camera did not reach the PC: ${model.camera.state.value.error}" }
+            Thread.sleep(2500)
             it.onActivity { activity ->
                 val state = (activity.application as SynqoraApplication).state.camera.state.value
                 Log.i("SynqoraCaptureMetrics", "target=${state.targetFps} encoded=${state.actualFps} resolution=${state.width}x${state.height} encodeMs=${state.encodeMs}")
             }
             // Keep camera analysis + audio + TLS active while exercising real navigation.
-            tap("Back to Home", description = true); tap("Settings"); tap("Home")
+            tap("Back to Device", description = true); tap("Inbox"); tap("Device")
             shell("dumpsys gfxinfo com.synqora reset")
-            repeat(12) { tap("Settings"); tap("Home") }
+            repeat(12) { tap("Inbox"); tap("Device") }
             shell("dumpsys gfxinfo com.synqora framestats").lineSequence().forEach { line -> Log.i("SynqoraFrameTimes", line) }
             select("Webcam"); tap("Stop camera", description = true)
-            tap("Back to Home", description = true); select("Microphone"); select("Stop")
+            tap("Back to Device", description = true); select("Microphone"); select("Stop")
         }
     }
 }

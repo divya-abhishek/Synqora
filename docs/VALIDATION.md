@@ -1,4 +1,31 @@
-# Validation — Synqora 0.4.0 / 21 October 2026
+# Validation — Synqora 0.5.0 / 22 October 2026
+
+This is a development preview. The checks below establish specific emulator, protocol and packaging behavior; they do not establish a production-ready Phone Link replacement or accepted physical Bluetooth calling.
+
+## Current results
+
+- **Builds:** Windows Release/publish passes with zero warnings/errors. Android debug, unit tests and lint pass; lint reports zero errors and 33 warnings. Shared-token/contrast checks pass. The apps expose dark mode only; historical light tokens are unused library values.
+- **Protocol/files:** pinned identity rejection, pairing-key rejection, input permission, live text edits/keys, fractional pointer movement, exact PCM, oriented JPEG validation and disconnect revocation pass. Unaccepted file lanes are rejected. Approved transfers verify SHA-256, corrupt data/unsafe filenames are rejected and partial files are removed. Metadata above 1 GB is preserved without allocating a large file; a multi-gigabyte physical transfer has not been measured.
+- **Companion integration:** actual synthetic source notification and original RemoteInput PendingIntent reply pass. A 1,048,737-byte payload transfers PC → phone → PC with matching hash. A test MediaStore image produces metadata, a thumbnail and a verified original download. A synthetic cellular call-log item reaches the PC. Fixtures run only on a disposable emulator and are cleaned up; no real call or personal message was sent. [Receiver evidence](validation/0.5/companion.json).
+- **Capture/power:** actual AudioRecord and CameraX stop when the PC disconnects, and the camera is closed at the OS level. Idle mode holds no capture wake lock. An isolated 13-second idle emulator sample used 9 ms of process CPU; this is not a multi-hour battery benchmark. The reported physical-phone battery drain needs a fresh overnight/idle test with the new build.
+- **Functional backend:** actual camera/audio over pinned TLS, display-off capture, live keyboard edits/Enter/Tab, pointer/click/scroll and reconnect input-permission revocation pass. A separate navigation test verifies all three root pages, disabled disconnected controls, microphone mute/gain and reduced motion.
+- **Native Windows receiver:** 182 frames decoded into 720×1280, with a non-flat independent 1280×720 native camera sample and no media/source errors. During 24 immediate page changes, rendering-callback p95 was 7.98 ms across 785 callbacks, with two over 33 ms. These are callback timings, not GPU presentation timings. Capture stopped when this receiver exited. [Metrics](validation/0.5/native-receiver.json).
+- **Final streaming performance:** 539 frames; 111 janky (20.59%); p50 36 ms, p95 81 ms, p99 113 ms in the API 35 software-GPU emulator at an explicitly set 1080×2400 / density 420. The receiver saw 318 camera frames, averaging 18.13 FPS. There were 109 slow draw-command frames versus 33 slow UI-thread frames; software rendering and camera JPEG processing remain material costs. GPU percentile overflow is unreliable. Compilers were stopped before prebuilt measurement. Navigation has no page animation and the new shell does not record or refract a background layer. **The 60 FPS target remains unaccepted.** An earlier candidate measured 24.36% jank / p95 85 ms at the emulator's default landscape 1920×1080 / density 320; these runs are not a controlled causal comparison. [Final summary](validation/0.5/streaming-final-summary.json) · [Earlier sample](validation/0.5/streaming-summary.json).
+- **Visual/layout:** ten native screens per platform are captured in dark mode. Windows is checked at 720, 1080, 1920 and 2560 requested pixels with 200 live-resize, horizontal-bounds, single-selection and page-retention checks. The phone navigation has its own layout space so it cannot cover page controls. Android captures cover 1080×2400, 720×1600, landscape 1920×1080 and Settings at 1.6 font scale. See the [screen gallery](SCREENSHOTS.md).
+
+## Calling acceptance
+
+Recent cellular history sync is tested with a synthetic call-log item. Direct dialing uses TelecomManager behind separate phone opt-in and CALL_PHONE permission; no real call was placed. The optional MSIX declares Windows phone capabilities and implements actual HFP line discovery, dialing, active-call events, answer/end/mute and PC/phone audio routing. Package installation, capability approval, actual Bluetooth microphone/speaker audio, phone compatibility and simultaneous call/streaming behavior remain unverified. Ordinary MSI/portable builds cannot enable that packaged capability path. WhatsApp direct outgoing calls and its private call history are unavailable; source notification actions and HFP exposure depend on the app/device. See [calling setup](CALLING.md).
+
+## Remaining acceptance
+
+Physical-phone multi-hour idle battery/thermal behavior; physical high-rate camera quality; external Meet/Camera enumeration and microphone capture; physical Bluetooth calling; screen reader/hardware keyboard/high-DPI behavior; tray interaction; clean offline installation, upgrade and uninstall. Computer Use was stopped by the user's Escape key; no subsequent desktop interaction was automated. No driver or experimental MSIX was installed and no certificate trust was changed during these checks. Production gates remain false in release-gates.json.
+
+The Windows review packaging flow requires published and extracted MSI payloads to render all ten dark screens, and compares every MSI cabinet file with the published payload. It extracts files without executing installer actions. Android release checks verify the signature and non-debuggable startup/navigation. The optional MSIX is manifest-validated and signed with a file-only development certificate; installation and OS capability acceptance remain open. Historical results below do not describe the 0.5 UI.
+
+---
+
+# Historical validation — Synqora 0.4.0 / 21 October 2026
 
 ## 0.4 development preview
 

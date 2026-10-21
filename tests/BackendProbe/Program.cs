@@ -28,7 +28,7 @@ if (args.Contains("--serve"))
 var invitation = new Uri(server.Invitation("127.0.0.1"));
 var query = invitation.Query.TrimStart('?').Split('&').Select(x => x.Split('=', 2)).ToDictionary(x => x[0], x => Uri.UnescapeDataString(x[1]));
 string key = query["key"], pin = query["pin"];
-var token = new CancellationTokenSource(TimeSpan.FromSeconds(20)).Token;
+var token = new CancellationTokenSource(TimeSpan.FromSeconds(60)).Token;
 async Task<(TcpClient Client, SslStream Stream)> Connect(string? expectedPin = null) {
     var client = new TcpClient(); await client.ConnectAsync("127.0.0.1", server.Port, token);
     var stream = new SslStream(client.GetStream(), false, (_, certificate, _, _) => certificate != null && Convert.ToHexString(SHA256.HashData(certificate.GetRawCertData())) == (expectedPin ?? pin));
@@ -80,6 +80,46 @@ video.Stream.Dispose(); video.Client.Dispose();
 using var oversized = new MemoryStream([4, 127, 255, 255, 255]);
 try { await Wire.Read(oversized, token); Check(false, "oversized frame rejected"); } catch (InvalidDataException) { Check(true, "oversized frame rejected before allocation"); }
 Check(!Wire.ValidJpeg([1, 2, 3]) && !Wire.ValidJpeg([255, 216, 255, 192, 0, 8, 8, 255, 255, 255, 255, 0]), "malformed and oversized JPEG rejected");
+var exchange = new FileExchange(server);
+var testDirectory = Path.Combine(Path.GetTempPath(), "synqora-protocol-" + Guid.NewGuid().ToString("N")); Directory.CreateDirectory(testDirectory);
+foreach (var unsafeName in new[] { "../escape", "C:\\secret", "CON.txt", "name.", "file\n.txt" }) {
+    try { FileExchange.SafeName(unsafeName); Check(false, "unsafe filename"); } catch (InvalidDataException) { }
+}
+Check(true, "file paths and Windows reserved filenames are rejected");
+async Task WaitFor(Func<bool> ready) { for (int i = 0; i < 100 && !ready(); i++) await Task.Delay(20, token); Check(ready(), "file transfer reached its expected state"); }
+byte[] fileBytes = Enumerable.Range(0, 70017).Select(i => (byte)(i % 251)).ToArray();
+string fileHash = Convert.ToHexString(SHA256.HashData(fileBytes));
+async Task<string> FileOffer(string name) {
+    string id = Guid.NewGuid().ToString("N");
+    await Wire.Write(control.Stream, FrameKind.Companion, Wire.Encode(new { type = "fileOffer", id, name, size = fileBytes.Length, hash = fileHash }), token);
+    await WaitFor(() => exchange.Transfers.Any(f => f.Id == id)); return id;
+}
+async Task<(TcpClient Client, SslStream Stream)> FileLane(string id) {
+    var lane = await Connect(); await Wire.Write(lane.Stream, FrameKind.Hello, Wire.Encode(new { key, role = "file", session, transfer = id, direction = "upload" }), token); await Wire.Read(lane.Stream, token); return lane;
+}
+var unaccepted = await FileOffer("consent.bin"); var refused = await FileLane(unaccepted);
+try { await Wire.Read(refused.Stream, token); Check(false, "unaccepted file lane"); } catch (IOException) { Check(true, "file lane rejected until receiver accepts"); }
+refused.Stream.Dispose(); refused.Client.Dispose(); exchange.Decline(unaccepted); await Wire.Read(control.Stream, token);
+var accepted = await FileOffer("verified.bin"); exchange.Accept(accepted, testDirectory); await Wire.Read(control.Stream, token);
+var upload = await FileLane(accepted);
+await Wire.Write(upload.Stream, FrameKind.FileChunk, fileBytes.AsMemory(0, 65536), token); await Wire.Write(upload.Stream, FrameKind.FileChunk, fileBytes.AsMemory(65536), token);
+await Wire.Write(upload.Stream, FrameKind.FileEnd, ReadOnlyMemory<byte>.Empty, token); await Wire.Read(upload.Stream, token);
+await WaitFor(() => exchange.Transfers.Any(f => f.Id == accepted && f.Status == "Complete"));
+Check(File.ReadAllBytes(Path.Combine(testDirectory, "verified.bin")).SequenceEqual(fileBytes), "accepted file is byte exact after SHA-256 verification");
+upload.Stream.Dispose(); upload.Client.Dispose(); await Task.Delay(50);
+var corrupt = await FileOffer("corrupted.bin"); exchange.Accept(corrupt, testDirectory); await Wire.Read(control.Stream, token);
+var badUpload = await FileLane(corrupt); var bad = fileBytes.ToArray(); bad[0] ^= 1;
+await Wire.Write(badUpload.Stream, FrameKind.FileChunk, bad.AsMemory(0, 65536), token); await Wire.Write(badUpload.Stream, FrameKind.FileChunk, bad.AsMemory(65536), token); await Wire.Write(badUpload.Stream, FrameKind.FileEnd, ReadOnlyMemory<byte>.Empty, token);
+try { await Wire.Read(badUpload.Stream, token); } catch (IOException) { }
+await WaitFor(() => exchange.Transfers.Any(f => f.Id == corrupt && f.Status == "Failed"));
+Check(!File.Exists(Path.Combine(testDirectory, "corrupted.bin")) && !Directory.EnumerateFiles(testDirectory, "*.part").Any(), "corrupt transfers are rejected and partial files removed");
+badUpload.Stream.Dispose(); badUpload.Client.Dispose();
+string largeId = Guid.NewGuid().ToString("N");
+await Wire.Write(control.Stream, FrameKind.Companion, Wire.Encode(new { type = "fileOffer", id = largeId, name = "large.bin", size = 2L * 1024 * 1024 * 1024 + 17, hash = fileHash }), token);
+await WaitFor(() => exchange.Transfers.Any(f => f.Id == largeId));
+Check(exchange.Transfers.Single(f => f.Id == largeId).Size == 2147483665L, "file metadata above 1 GB is preserved without allocating its contents");
+exchange.Decline(largeId); await Wire.Read(control.Stream, token);
+foreach (var file in Directory.EnumerateFiles(testDirectory)) File.Delete(file); Directory.Delete(testDirectory);
 audio.Stream.Dispose(); audio.Client.Dispose(); control.Stream.Dispose(); control.Client.Dispose();
 await Task.Delay(100); Check(!server.State.Connected, "disconnect revokes connection and media state");
 Console.WriteLine("Backend protocol checks passed.");

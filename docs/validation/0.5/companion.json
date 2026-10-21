@@ -1,0 +1,41 @@
+{
+  "notifications": 3,
+  "replied": true,
+  "actionResult": true,
+  "disconnected": true,
+  "audio": 793600,
+  "video": 47,
+  "galleryPage": true,
+  "galleryThumb": true,
+  "historySeen": true,
+  "files": [
+    {
+      "Id": "41e864bdf358410f82a46d0c0590b181",
+      "Name": "synqora-gallery-fixture.png",
+      "Size": 237,
+      "Incoming": true,
+      "Status": "Complete",
+      "Done": 237,
+      "Path": null
+    },
+    {
+      "Id": "66181dc8b0ac4c6d892593d2274b89e2",
+      "Name": "Shared file",
+      "Size": 1048737,
+      "Incoming": true,
+      "Status": "Complete",
+      "Done": 1048737,
+      "Path": null
+    },
+    {
+      "Id": "0364f2ddfa5f4a699539e2d1f5499a80",
+      "Name": "pc-to-phone.bin",
+      "Size": 1048737,
+      "Incoming": false,
+      "Status": "Complete",
+      "Done": 1048737,
+      "Path": null
+    }
+  ],
+  "expectedHash": "B3DD45908C04A2A5E76B17CB2D0FA736C20D270EDE91830959187F1197F2C001"
+}

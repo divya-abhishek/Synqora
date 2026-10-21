@@ -1,0 +1,15 @@
+{
+  "checks": 200,
+  "horizontalViolations": 0,
+  "selectedExactlyOne": true,
+  "requestedSizes": [
+    720,
+    1080,
+    1920,
+    2560
+  ],
+  "screensPerPlatform": 10,
+  "publicThemes": [
+    "Dark"
+  ]
+}

@@ -11,6 +11,7 @@ using Synqora.Services;
 using System.Diagnostics;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text.Json;
+using Synqora.Core;
 using System.Threading.Channels;
 using Windows.Graphics;
 using Windows.Graphics.Imaging;
@@ -20,11 +21,24 @@ using static Synqora.Design.Glass;
 
 namespace Synqora;
 
-public sealed class MainWindow : Window
+public sealed partial class MainWindow : Window
 {
     private readonly Preferences preferences = Preferences.Load();
     private readonly WindowsSession session = new();
+    private readonly FileExchange files;
+    private readonly CompanionInbox inbox;
+    private readonly Gallery gallery;
+    private readonly PhoneCalls calls;
+    private readonly BluetoothCalls bluetooth = new();
+    private TrayIcon? tray;
+    private bool quitting;
+    private ContentDialog? pairingDialog;
+    private StackPanel? fileList, notificationList, callList;
+    private readonly Dictionary<string, (string Version, UIElement Card)> notificationCards = [];
+    private string companionError = "";
     private readonly List<Action> liveBindings = [];
+    private readonly Dictionary<string, List<Action>> pageBindings = [];
+    private List<Action>? buildingBindings;
     private readonly DispatcherTimer liveTimer = new() { Interval = TimeSpan.FromSeconds(1) };
     private readonly CancellationTokenSource mediaCancellation = new();
     private readonly Channel<(byte[] Jpeg, long Generation, int Rotation)> jpegFrames = Channel.CreateBounded<(byte[], long, int)>(new BoundedChannelOptions(1) { FullMode = BoundedChannelFullMode.DropOldest });
@@ -48,8 +62,8 @@ public sealed class MainWindow : Window
     private Button connectionButton = null!;
     private readonly Dictionary<string, TextBlock> navLabels = [];
     private ScrollViewer scroll = null!;
-    private readonly string[] pages = ["Overview", "Microphone", "Webcam", "Touchpad", "Keyboard", "Settings"];
-    private readonly string[] glyphs = ["\uE80F", "\uE720", "\uE714", "\uE7C9", "\uE765", "\uE713"];
+    private readonly string[] pages = ["Overview", "Inbox", "Files", "Photos", "Calls", "Microphone", "Webcam", "Touchpad", "Keyboard", "Settings"];
+    private readonly string[] glyphs = ["\uE80F", "\uE7E7", "\uE8B7", "\uEB9F", "\uE717", "\uE720", "\uE714", "\uE7C9", "\uE765", "\uE713"];
     private string page = "Overview";
     private readonly Dictionary<string, double> scrollPositions = [];
     private readonly Dictionary<string, StackPanel> pageCache = [];
@@ -60,15 +74,25 @@ public sealed class MainWindow : Window
     private readonly string[] args;
     private bool capturing;
     private bool lastHighContrast;
+    private volatile bool previewVisible = true;
 
     public MainWindow(string[] arguments)
     {
         args = arguments; g = new Glass(preferences);
+        preferences.Theme = "Dark";
+        files = new FileExchange(session.Server); inbox = new CompanionInbox(session.Server);
+        gallery = new Gallery(session.Server, files);
+        calls = new PhoneCalls(session.Server);
+        calls.Changed += refresh => DispatcherQueue.TryEnqueue(() => { RefreshCallHistory(); if (refresh && page == "Calls") calls.Refresh(); });
+        bluetooth.Changed += () => DispatcherQueue.TryEnqueue(RefreshBluetoothCalls);
+        gallery.Changed += id => DispatcherQueue.TryEnqueue(() => GalleryChanged(id));
+        files.Changed += () => DispatcherQueue.TryEnqueue(RefreshFiles);
+        inbox.Changed += () => DispatcherQueue.TryEnqueue(RefreshNotifications);
         try { cameraBridge = new CameraBridge(); cameraBridge.Framing(preferences.CameraFill); }
         catch (Exception error) { cameraBridgeError = error.Message; }
         session.Gain = (float)preferences.Gain / 100;
         session.Muted = preferences.Muted;
-        Title = "Synqora · 0.4 Preview";
+        Title = "Synqora · 0.5 Preview";
         AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets", "synqora.ico"));
         int ArgInt(string key, int fallback) { var at = Array.IndexOf(args, key); return at >= 0 && at + 1 < args.Length && int.TryParse(args[at + 1], out var value) ? value : fallback; }
         AppWindow.Resize(new SizeInt32(Math.Max(700, ArgInt("--width", 1080)), Math.Max(600, ArgInt("--height", 820))));
@@ -77,12 +101,26 @@ public sealed class MainWindow : Window
         AppWindow.TitleBar.ButtonBackgroundColor = Colors.Transparent;
         AppWindow.TitleBar.ButtonInactiveBackgroundColor = Colors.Transparent;
         Build();
+        if (!args.Contains("--capture") && !args.Contains("--receiver-test")) {
+            try {
+                tray = new TrayIcon(WinRT.Interop.WindowNative.GetWindowHandle(this), Path.Combine(AppContext.BaseDirectory, "Assets", "synqora.ico"), ShowWindow, ConnectionDetails, () => _ = session.DisconnectAsync(), () => { quitting = true; Close(); }, () => preferences.MinimizeToTray);
+                tray.showHidden = () => DispatcherQueue.TryEnqueue(() => AppWindow.Hide());
+                AppWindow.Closing += (_, e) => { if (!quitting && preferences.CloseToTray) { e.Cancel = true; AppWindow.Hide(); } };
+            } catch (Exception error) { StartupDiagnostics.Write("Tray icon", error); }
+        }
         session.Changed += _ => DispatcherQueue.TryEnqueue(() => {
+            if (session.CanStream) pairingDialog?.Hide();
+            tray?.Status(session.CanStream ? $"Connected to {session.Device.Name}" : "No phone connected");
             foreach (var update in liveBindings.ToArray()) update();
-            audioView?.SetStreaming(session.Server.State.Microphone && page == "Microphone");
-            if (session.CanStream) liveTimer.Start(); else { liveTimer.Stop(); videoDimensions = "—"; if (cameraImage != null) cameraImage.Source = null; }
+            audioView?.SetStreaming(previewVisible && session.Server.State.Microphone && page == "Microphone");
+            if (session.CanStream && previewVisible) liveTimer.Start(); else { liveTimer.Stop(); if (!session.CanStream) { videoDimensions = "—"; if (cameraImage != null) cameraImage.Source = null; } }
         });
         liveTimer.Tick += (_, _) => { foreach (var update in liveBindings.ToArray()) update(); };
+        AppWindow.Changed += (_, _) => {
+            previewVisible = AppWindow.IsVisible && (AppWindow.Presenter is not OverlappedPresenter p || p.State != OverlappedPresenterState.Minimized);
+            audioView?.SetStreaming(previewVisible && page == "Microphone" && session.Server.State.Microphone);
+            if (previewVisible && session.CanStream) liveTimer.Start(); else liveTimer.Stop();
+        };
         session.Levels += values => audioView?.Publish(values);
         session.Video += (bytes, rotation) => jpegFrames.Writer.TryWrite((bytes, cameraBridge?.Generation ?? 0, rotation));
         session.Server.Changed += state => {
@@ -93,7 +131,7 @@ public sealed class MainWindow : Window
             }
         };
         _ = Task.Run(DecodeVideo);
-        Closed += (_, _) => { liveTimer.Stop(); preferences.Save(); mediaCancellation.Cancel(); jpegFrames.Writer.TryComplete(); session.Dispose(); _ = Task.Run(() => cameraBridge?.Dispose()); };
+        Closed += (_, _) => { bluetooth.Dispose(); tray?.Dispose(); liveTimer.Stop(); preferences.Save(); mediaCancellation.Cancel(); jpegFrames.Writer.TryComplete(); session.Dispose(); _ = Task.Run(() => cameraBridge?.Dispose()); };
         system.ColorValuesChanged += (_, _) => DispatcherQueue.TryEnqueue(() => { if (preferences.Theme == "System") Build(); });
         system.AdvancedEffectsEnabledChanged += (_, _) => DispatcherQueue.TryEnqueue(Build);
         system.AnimationsEnabledChanged += (_, _) => DispatcherQueue.TryEnqueue(Build);
@@ -102,13 +140,14 @@ public sealed class MainWindow : Window
         catch (System.Runtime.InteropServices.COMException) { /* Some unpackaged environments do not expose this event. Refresh on activation below. */ }
         Activated += (_, e) => { if (e.WindowActivationState != WindowActivationState.Deactivated && lastHighContrast != g.HighContrast) Build(); };
     }
+    private void ShowWindow() { AppWindow.Show(); if (AppWindow.Presenter is OverlappedPresenter p) p.Restore(); Activate(); }
     private void Build()
     {
-        liveBindings.Clear(); audioView = null; cameraImage = null;
+        liveBindings.Clear(); pageBindings.Clear(); audioView = null; cameraImage = null; fileList = null; notificationList = null; callList = null; notificationCards.Clear(); photos = null; photoStatus = null; photoImages.Clear(); loadedPhotos.Clear(); photoGeneration++; recentCalls = null; dialNumber = null; dialButton = null; callAccess = null; dialResult = null; bluetoothCallList = null; bluetoothStatus = null;
         if (scroll is not null) scrollPositions[page] = scroll.VerticalOffset;
         pageCache.Clear();
         lastHighContrast = g.HighContrast;
-        g.Dark = preferences.Theme == "Dark" || (preferences.Theme == "System" && system.GetColorValue(UIColorType.Background).R < 128);
+        g.Dark = true;
         SystemBackdrop = !g.Solid && Microsoft.UI.Composition.SystemBackdrops.DesktopAcrylicController.IsSupported() ? new ClearBackdrop(g) : !g.Solid && Microsoft.UI.Composition.SystemBackdrops.MicaController.IsSupported() ? new MicaBackdrop() : null;
         root = new Grid { Background = g.Brush("background", g.Solid ? 1 : .08), RequestedTheme = g.Dark ? ElementTheme.Dark : ElementTheme.Light };
 
@@ -122,9 +161,13 @@ public sealed class MainWindow : Window
         root.Resources["AccentFillColorSecondaryBrush"] = g.Brush("accent", .9);
         root.Resources["AccentFillColorTertiaryBrush"] = g.Brush("accent", .8);
         root.Resources["TextOnAccentFillColorPrimaryBrush"] = g.Brush("onAccent");
+        root.Resources["ContentDialogBackground"] = g.Brush("solid");
+        root.Resources["ContentDialogSmokeFill"] = g.Brush("background", .35);
+        root.Resources["ContentDialogTopOverlay"] = g.Brush("surface");
+        root.Resources["ContentDialogBorderBrush"] = g.Brush("text", .13);
         root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(48) });
         root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-        var title = Row(10, Brand.Mark(g, 28), g.Text("Synqora", 14, "text", true), g.Text("Preview 0.4", 11, "muted"));
+        var title = Row(10, Brand.Mark(g, 28), g.Text("Synqora", 14, "text", true), g.Text("Preview 0.5", 11, "muted"));
         title.Margin = new(24, 0, 150, 0); title.Background = g.Brush("background", .01);
         root.Children.Add(title); SetTitleBar(title);
         AppWindow.TitleBar.ButtonForegroundColor = g.Color("text");
@@ -133,7 +176,8 @@ public sealed class MainWindow : Window
         Grid.SetRow(shell, 1); root.Children.Add(shell);
         var sidebar = new Grid(); sidebar.RowDefinitions.Add(new() { Height = GridLength.Auto }); sidebar.RowDefinitions.Add(new() { Height = new(1, GridUnitType.Star) }); sidebar.RowDefinitions.Add(new() { Height = GridLength.Auto });
         sidebarLabel = g.Text("Workspace", 12, "muted"); sidebarLabel.Margin = new(14, 14, 0, 16); sidebar.Children.Add(sidebarLabel);
-        nav = Stack(5); nav.HorizontalAlignment = HorizontalAlignment.Stretch; Grid.SetRow(nav, 1); sidebar.Children.Add(nav); BuildNav();
+        nav = Stack(5); nav.HorizontalAlignment = HorizontalAlignment.Stretch;
+        var navScroll = new ScrollViewer { Content = nav, VerticalScrollBarVisibility = ScrollBarVisibility.Hidden, HorizontalScrollMode = ScrollMode.Disabled }; Grid.SetRow(navScroll, 1); sidebar.Children.Add(navScroll); BuildNav();
         connectionButton = g.Button("Connect phone", ConnectionDetails, glyph: "\uE8F2"); connectionButton.HorizontalAlignment = HorizontalAlignment.Stretch; connectionButton.HorizontalContentAlignment = HorizontalAlignment.Left;
         var footer = Stack(12, connectionButton); footer.Margin = new(0, 20, 0, 4); Grid.SetRow(footer, 2); sidebar.Children.Add(footer);
         var navigation = g.Surface(sidebar, "Regular", 8); navigation.CornerRadius = new(20); shell.Children.Add(navigation);
@@ -199,17 +243,22 @@ public sealed class MainWindow : Window
             button.Background = g.Brush("text", selected ? .09 : 0);
         }
         RenderPage(false);
+        if (dest == "Photos" && galleryDirty) { galleryDirty = false; gallery.Page(); }
+        if (dest == "Calls") calls.Refresh();
     }
     private void RenderPage(bool animate = false)
     {
         if (!pageCache.TryGetValue(page, out var content))
         {
-            content = page switch { "Overview" => Dashboard(), "Microphone" => Microphone(), "Webcam" => Webcam(), "Touchpad" => Touchpad(), "Keyboard" => Keyboard(), _ => Settings() };
+            if (pageBindings.Remove(page, out var previous)) foreach (var binding in previous) liveBindings.Remove(binding);
+            buildingBindings = []; pageBindings[page] = buildingBindings;
+            content = page switch { "Overview" => Dashboard(), "Inbox" => InboxPage(false), "Files" => FilesPage(), "Photos" => PhotosPage(), "Calls" => CallsPage(), "Microphone" => Microphone(), "Webcam" => Webcam(), "Touchpad" => Touchpad(), "Keyboard" => Keyboard(), _ => Settings() };
+            buildingBindings = null;
             pageCache[page] = content;
         }
         content.MaxWidth = double.PositiveInfinity; content.HorizontalAlignment = HorizontalAlignment.Center;
         pageHost.Children.Clear(); pageHost.Children.Add(content); SizeWorkspace();
-        audioView?.SetStreaming(page == "Microphone" && session.Server.State.Microphone);
+        audioView?.SetStreaming(previewVisible && page == "Microphone" && session.Server.State.Microphone);
         var destination = page;
         DispatcherQueue.TryEnqueue(() => { if (page == destination) scroll.ChangeView(null, scrollPositions.GetValueOrDefault(destination), null, true); });
         if (animate) g.Enter(content);
@@ -217,6 +266,8 @@ public sealed class MainWindow : Window
     private StackPanel Heading(string eyebrow, string title, string subtitle) => Stack(8, g.Display(title, 28), g.Text(subtitle, 14, "muted"));
     private async void ConnectionDetails()
     {
+        if (pairingDialog != null) return;
+        if (session.CanStream) { await g.Dialog(root.XamlRoot, "Your phone", Stack(16, g.Text(session.Device.Name, 22, "text", true), g.Text("Connected securely over your local network.", 14, "muted"), ControlSwitch(), g.Button("Disconnect", () => _ = session.DisconnectAsync()))); return; }
         try { session.Start(); }
         catch (Exception error) { await g.Dialog(root.XamlRoot, "Could not start connection", g.Text(error.Message)); return; }
         var invitation = session.Server.Invitation();
@@ -225,20 +276,24 @@ public sealed class MainWindow : Window
         using var qrStream = new Windows.Storage.Streams.InMemoryRandomAccessStream();
         await qrStream.WriteAsync(qr.GetGraphic(6).AsBuffer()); qrStream.Seek(0);
         var qrImage = new BitmapImage(); await qrImage.SetSourceAsync(qrStream);
-        var qrPanel = new Border { Background = new SolidColorBrush(Colors.White), Padding = new(8), CornerRadius = new(20), HorizontalAlignment = HorizontalAlignment.Center, Child = new Image { Source = qrImage, Width = 248, Height = 248 } };
+        var qrPanel = new Border { Background = new SolidColorBrush(Colors.White), Padding = new(12), CornerRadius = new(20), HorizontalAlignment = HorizontalAlignment.Center, Child = new Image { Source = qrImage, Width = 216, Height = 216 } };
         AutomationProperties.SetName(qrPanel, "Pairing QR code. The same invitation is available in the pairing link field.");
-        var link = new TextBox { Header = "Pairing link", Text = invitation, IsReadOnly = true, TextWrapping = TextWrapping.Wrap, CornerRadius = new(14) };
         var copy = g.Button("Copy pairing link", () => { var data = new Windows.ApplicationModel.DataTransfer.DataPackage(); data.SetText(invitation); Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(data); }, true, "\uE8C8");
-        var content = Stack(16, LiveStatus(() => session.CanStream ? $"Connected to {session.Device.Name}" : "Waiting for your phone"), g.Text("On your phone, tap Connection details → Scan PC code. Keep both devices on the same local network. This invitation expires after ten minutes.", 14, "muted"), qrPanel, link, copy, ControlSwitch(), g.Button("Disconnect phone", () => _ = session.DisconnectAsync()));
-        await g.Dialog(root.XamlRoot, "Connect your phone", content);
+        copy.HorizontalAlignment = HorizontalAlignment.Center;
+        var content = Stack(20, g.Text("Open Synqora on your phone, tap Connect a computer, then scan this code.", 14, "muted"), qrPanel, copy, g.Text("Same Wi-Fi · encrypted connection · code expires in 10 minutes", 12, "muted"));
+        content.MaxWidth = 360;
+        pairingDialog = new ContentDialog { XamlRoot = root.XamlRoot, RequestedTheme = ElementTheme.Dark, Title = "Connect your phone", Content = content, CloseButtonText = "Cancel", Background = g.Brush("solid"), Foreground = g.Brush("text"), CornerRadius = new(28) };
+        try { if (!session.CanStream) await pairingDialog.ShowAsync(); }
+        finally { pairingDialog = null; }
     }
-    private TextBlock Live(Func<string> value, double size = 14, string token = "text") { var label = g.Text(value(), size, token); liveBindings.Add(() => label.Text = value()); return label; }
+    private void Bind(Action binding) { liveBindings.Add(binding); buildingBindings?.Add(binding); }
+    private TextBlock Live(Func<string> value, double size = 14, string token = "text") { var label = g.Text(value(), size, token); Bind(() => label.Text = value()); return label; }
     private Button LiveButton(Func<string> value, Action action, bool primary = false) {
         var button = g.Button(value(), action, primary); var label = g.Text(value(), 14, primary ? "onAccent" : "text", true); button.Content = label;
-        liveBindings.Add(() => { var next = value(); if (label.Text != next) { label.Text = next; AutomationProperties.SetName(button, next); } }); return button;
+        Bind(() => { var next = value(); if (label.Text != next) { label.Text = next; AutomationProperties.SetName(button, next); } }); return button;
     }
     private Border LiveStatus(Func<string> value) { var panel = g.Surface(Live(value, 12, "muted"), "Subtle", 10); panel.CornerRadius = new(18); panel.HorizontalAlignment = HorizontalAlignment.Left; return panel; }
-    private ToggleSwitch ControlSwitch() { var toggle = g.Switch("Allow phone keyboard & pointer", session.Server.State.ControlsAllowed, session.Server.AllowControls); liveBindings.Add(() => { if (toggle.IsOn != session.Server.State.ControlsAllowed) toggle.IsOn = session.Server.State.ControlsAllowed; }); return toggle; }
+    private ToggleSwitch ControlSwitch() { var toggle = g.Switch("Allow phone keyboard & pointer", session.Server.State.ControlsAllowed, session.Server.AllowControls); Bind(() => { if (toggle.IsOn != session.Server.State.ControlsAllowed) toggle.IsOn = session.Server.State.ControlsAllowed; }); return toggle; }
     private async Task DecodeVideo()
     {
         try {
@@ -259,13 +314,13 @@ public sealed class MainWindow : Window
                 if (session.Server.State.Camera && cameraBridge != null) {
                     try { cameraBridge.Write(bitmap, frame.Generation); } catch (Exception error) { cameraBridgeError = error.Message; }
                 }
-                if (Interlocked.CompareExchange(ref presentationPending, 1, 0) != 0) { bitmap.Dispose(); continue; }
+                if (!previewVisible || Interlocked.CompareExchange(ref presentationPending, 1, 0) != 0) { bitmap.Dispose(); continue; }
                 if (!DispatcherQueue.TryEnqueue(async () => {
                     try {
                         if (!session.Server.State.Camera || frame.Generation != (cameraBridge?.Generation ?? 0)) return;
                         videoDimensions = dimensions;
                         var target = cameraImage;
-                        if (target != null && page == "Webcam" && target.IsLoaded && (AppWindow.Presenter is not OverlappedPresenter presenter || presenter.State != OverlappedPresenterState.Minimized)) {
+                        if (previewVisible && target != null && page == "Webcam" && target.IsLoaded) {
                             var source = target.Source as SoftwareBitmapSource ?? new SoftwareBitmapSource(); await source.SetBitmapAsync(bitmap);
                             if (page == "Webcam" && target.IsLoaded && ReferenceEquals(cameraImage, target) && session.Server.State.Camera && frame.Generation == (cameraBridge?.Generation ?? 0)) target.Source = source;
                         }
@@ -287,7 +342,7 @@ public sealed class MainWindow : Window
         string[] descriptions = ["Use your phone's microphone in calls and recordings", "Bring your phone camera to your PC", "Move, click and scroll from your phone", "Type and use shortcuts in your PC apps"];
         for (int i = 0; i < names.Length; i++) {
             var name = names[i]; var tile = g.Button(name, () => Navigate(name));
-            var symbol = g.Icon(glyphs[i + 1], 22, "text");
+            var symbol = g.Icon(glyphs[Array.IndexOf(pages, name)], 22, "text");
             var text = Stack(4, g.Text(name, 17, "text", true), g.Text(descriptions[i], 12, "muted"));
             var tileContent = new Grid { ColumnSpacing = 20 }; tileContent.ColumnDefinitions.Add(new() { Width = new(32) }); tileContent.ColumnDefinitions.Add(new() { Width = new(1, GridUnitType.Star) }); tileContent.ColumnDefinitions.Add(new() { Width = GridLength.Auto });
             tileContent.Children.Add(symbol); Grid.SetColumn(text, 1); tileContent.Children.Add(text); var arrow = g.Icon("\uE76C", 12, "muted"); Grid.SetColumn(arrow, 2); tileContent.Children.Add(arrow); tile.Content = tileContent;
@@ -345,7 +400,7 @@ public sealed class MainWindow : Window
         view.Children.Add(center);
         cameraImage = new Image { Stretch = preferences.CameraFill ? Stretch.UniformToFill : Stretch.Uniform }; view.Children.Add(cameraImage);
         var image = cameraImage; image.Unloaded += (_, _) => image.Source = null;
-        liveBindings.Add(() => center.Visibility = session.Server.State.Camera ? Visibility.Collapsed : Visibility.Visible);
+        Bind(() => center.Visibility = session.Server.State.Camera ? Visibility.Collapsed : Visibility.Visible);
         var label = LiveStatus(() => session.Server.State.Camera ? "Live camera" : "Camera off"); label.Margin = new(16); label.VerticalAlignment = VerticalAlignment.Top; view.Children.Add(label);
         var settings = g.IconButton("\uE713", "Camera settings", CameraSettings); settings.Margin = new(12); settings.HorizontalAlignment = HorizontalAlignment.Right; settings.VerticalAlignment = VerticalAlignment.Top; view.Children.Add(settings);
         var metrics = Live(() => session.Server.State.Camera ? $"{videoDimensions} · {decodedFps:0} fps" : "", 12, "muted"); metrics.Margin = new(20); metrics.VerticalAlignment = VerticalAlignment.Bottom; view.Children.Add(metrics);
@@ -389,13 +444,99 @@ public sealed class MainWindow : Window
 
     private Grid Guide(string label, string description) { var lead = g.Text(label, 14, "text", true); lead.Width = 96; return g.Leading(lead, g.Text(description, 14, "muted")); }
 
+    private StackPanel FilesPage() {
+        fileList = Stack(12); RefreshFiles();
+        return Stack(24, Heading("", "Files", "A direct route between your devices."),
+            g.Section(Stack(16, g.Text("Send to your phone", 20, "text", true), g.Text("Choose a file of any size, within the available storage on your devices. Your phone asks where to save it. Transfers use a separate encrypted connection and are verified before saving.", 14, "muted"), g.Button("Choose a file", ChooseFile, true, "\uE8B7"), Live(() => companionError, 13, "danger"))),
+            g.Text("Transfers", 17, "text", true), fileList);
+    }
+    private async void ChooseFile() {
+        if (!session.CanStream) { companionError = "Connect your phone first."; return; }
+        var picker = new Windows.Storage.Pickers.FileOpenPicker(); picker.FileTypeFilter.Add("*"); WinRT.Interop.InitializeWithWindow.Initialize(picker, WinRT.Interop.WindowNative.GetWindowHandle(this));
+        try {
+            var chosen = await picker.PickSingleFileAsync(); if (chosen == null) return;
+            companionError = "Preparing file…"; await Task.Run(() => files.Offer(chosen.Path)); companionError = "";
+        } catch (Exception error) { companionError = error.Message; }
+        foreach (var update in liveBindings.ToArray()) update();
+    }
+    private void RefreshFiles() {
+        if (fileList == null) return;
+        fileList.Children.Clear();
+        foreach (var file in files.Transfers.Take(30)) {
+            var info = Stack(12, g.Text(file.Name, 16, "text", true), g.Text($"{Math.Max(1, file.Size / 1024):N0} KB · {(file.Incoming ? "From phone" : "To phone")} · {file.Status}", 13, "muted"));
+            if (file.Status == "Transferring") info.Children.Add(new ProgressBar { Minimum = 0, Maximum = Math.Max(1, file.Size), Value = file.Done, Foreground = g.Brush("accent") });
+            if (file.Incoming && file.Status == "Waiting") info.Children.Add(Row(10, g.Button("Save to Downloads", () => {
+                try { files.Accept(file.Id, Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads", "Synqora")); }
+                catch (Exception error) { companionError = error.Message; }
+            }, true), g.Button("Decline", () => files.Decline(file.Id))));
+            else if (file.Status is "Waiting" or "Ready" or "Transferring") info.Children.Add(g.Button("Cancel", () => files.Decline(file.Id)));
+            if (file.Status == "Complete" && file.Path != null) info.Children.Add(g.Button("Show in folder", () => Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{file.Path}\"") { UseShellExecute = true })));
+            fileList.Children.Add(g.Surface(info, "Subtle", 18));
+        }
+        if (fileList.Children.Count == 0) fileList.Children.Add(g.Text("Files you send or receive appear here. Incoming files always ask for your approval.", 14, "muted"));
+    }
+    private StackPanel InboxPage(bool calls) {
+        var list = Stack(12); if (calls) callList = list; else notificationList = list;
+        var content = Stack(24, Heading("", calls ? "Calls" : "Inbox", calls ? "Stay in the conversation." : "Your phone, with fewer interruptions."),
+            g.Section(Stack(12, g.Text(calls ? "Call controls from notifications" : "Enable notification sync on your phone", 19, "text", true),
+                g.Text(calls ? "Incoming call notifications and available answer or decline actions appear here. The phone handles the call; Synqora does not route cellular or WhatsApp call audio to the PC." : "In Synqora on your phone, open Inbox, turn on notification sync and grant notification access. Reply works with WhatsApp, SMS, RCS and other notifications that expose a reply action.", 14, "muted"))),
+            Live(() => inbox.Result, 14, "muted"), list);
+        if (calls) {
+            var number = new TextBox { Header = "Phone number", PlaceholderText = "+1 555 0100", MaxLength = 40, CornerRadius = new(12) };
+            content.Children.Insert(2, g.Section(Stack(12, number, g.Button("Open dialer on phone", () => {
+                var value = number.Text.Trim();
+                if (value.Length is < 1 or > 40 || value.Any(c => !"0123456789+*# ()-".Contains(c))) { companionError = "Enter a phone number."; return; }
+                inbox.Dial(value);
+            }, true), g.Text("Tap the dial request notification on your phone to place the call. Notification sync and phone notification permission must be enabled.", 13, "muted"))));
+        }
+        RefreshNotifications(); return content;
+    }
+    private void RefreshNotifications() {
+        var items = inbox.Items;
+        var current = items.Select(n => n.Id).ToHashSet();
+        foreach (var id in notificationCards.Keys.Where(id => !current.Contains(id)).ToArray()) notificationCards.Remove(id);
+        void Fill(StackPanel? host, bool calls) {
+            if (host == null) return;
+            var desired = items.Where(n => n.Call == calls).Take(80).ToArray();
+            var cards = new List<UIElement>();
+            foreach (var n in desired) {
+                if (!notificationCards.TryGetValue(n.Id, out var saved) || saved.Version != n.Version) {
+                    var actions = Row(10);
+                    foreach (var action in n.Actions) actions.Children.Add(g.Button(action.Label, () => {
+                        if (action.Reply) Reply(n, action); else inbox.Action(n, action);
+                    }, action.Reply));
+                    actions.Children.Add(g.Button("Dismiss", () => inbox.Dismiss(n)));
+                    var body = Stack(12, g.Text(n.App, 12, "muted"), g.Text(n.Title, 17, "text", true), g.Text(n.Text, 14, "muted"));
+                    // Stack vertically at small window widths rather than overflowing action labels.
+                    var actionWrap = Stack(8); foreach (var action in actions.Children.ToArray()) { actions.Children.Remove(action); ((FrameworkElement)action).HorizontalAlignment = HorizontalAlignment.Left; actionWrap.Children.Add(action); }
+                    body.Children.Add(actionWrap); var card = g.Surface(body, "Subtle", 18); saved = (n.Version, card); notificationCards[n.Id] = saved;
+                }
+                cards.Add(saved.Card);
+            }
+            // Preserve existing elements, including keyboard focus, on unrelated notification updates.
+            for (int i = host.Children.Count - 1; i >= 0; --i) if (!cards.Contains(host.Children[i])) host.Children.RemoveAt(i);
+            for (int i = 0; i < cards.Count; ++i) {
+                int at = host.Children.IndexOf(cards[i]); if (at == i) continue; if (at >= 0) host.Children.RemoveAt(at); host.Children.Insert(i, cards[i]);
+            }
+            if (cards.Count == 0 && host.Children.Count == 0) host.Children.Add(g.Text(calls ? "No active call notifications." : inbox.Enabled ? "You're all caught up." : "Waiting for notification access on your phone.", 14, "muted"));
+        }
+        Fill(notificationList, false); Fill(callList, true);
+        foreach (var update in liveBindings.ToArray()) update();
+    }
+    private async void Reply(PhoneNotification notification, PhoneAction action) {
+        var text = new TextBox { Header = "Your reply", AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MaxLength = 4096, MinHeight = 100, CornerRadius = new(14) };
+        var dialog = new ContentDialog { XamlRoot = root.XamlRoot, RequestedTheme = ElementTheme.Dark, Title = $"Reply to {notification.Title}", Content = text, PrimaryButtonText = "Send", CloseButtonText = "Cancel", DefaultButton = ContentDialogButton.Primary };
+        if (await dialog.ShowAsync() == ContentDialogResult.Primary && !string.IsNullOrWhiteSpace(text.Text)) inbox.Action(notification, action, text.Text);
+    }
+
     private StackPanel Settings()
     {
         return Stack(24, Heading("Make it yours", "Settings", "Appearance, comfort, and connection."),
-            g.Section(Stack(20, g.Text("Appearance", 17, "text", true), g.Dropdown("Color theme", ["System", "Light", "Dark"], preferences.Theme, v => { preferences.Theme = v; preferences.Save(); Build(); }), g.Dropdown("Visual effects quality", ["Balanced", "Economy", "High"], preferences.Effects, v => { preferences.Effects = v; preferences.Save(); Build(); }))), g.Rule(),
+            g.Section(Stack(20, g.Text("Appearance", 17, "text", true), g.Text("Dark glass", 14, "muted"), g.Dropdown("Visual effects quality", ["Balanced", "Economy", "High"], preferences.Effects, v => { preferences.Effects = v; preferences.Save(); Build(); }))), g.Rule(),
+            g.Section(Stack(18, g.Text("Keep it close", 17, "text", true), g.Switch("Minimize to notification area", preferences.MinimizeToTray, v => { preferences.MinimizeToTray = v; preferences.Save(); }), g.Switch("Keep running when the window closes", preferences.CloseToTray, v => { preferences.CloseToTray = v; preferences.Save(); }), g.Text("Use the Synqora tray menu to open the window or quit. Pin Synqora to the taskbar for a quick launcher.", 13, "muted"))), g.Rule(),
             g.Section(Stack(20, g.Text("Comfort & accessibility", 17, "text", true), g.Switch("Reduce motion", preferences.ReducedMotion, v => { preferences.ReducedMotion = v; preferences.Save(); }), g.Switch("Reduce transparency", preferences.ReducedTransparency, v => { preferences.ReducedTransparency = v; preferences.Save(); Build(); }), g.Text("Windows animation, transparency, and high contrast preferences apply automatically.", 13, "muted"))), g.Rule(),
             g.Section(Stack(16, g.Text("Connection & privacy", 17, "text", true), Live(() => session.CanStream ? $"Encrypted local connection to {session.Device.Name}." : "No phone connected. Your microphone and camera are off.", 14, "muted"), ControlSwitch(), g.Button("Device details", ConnectionDetails))),
-            g.Text("Synqora 0.4.0 preview", 12, "muted"));
+            g.Text("Synqora 0.5.0 preview", 12, "muted"));
     }
     private async Task CapturePreviews()
     {
@@ -404,7 +545,7 @@ public sealed class MainWindow : Window
         Directory.CreateDirectory(directory);
         var originalTheme = preferences.Theme;
         var audits = new List<object>();
-        foreach (var theme in new[] { "Dark", "Light" })
+        foreach (var theme in new[] { "Dark" })
         {
             preferences.Theme = theme; Build(); await Task.Delay(300);
             foreach (var destination in pages)

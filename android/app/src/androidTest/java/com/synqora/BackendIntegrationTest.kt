@@ -20,18 +20,20 @@ class BackendIntegrationTest {
         instrumentation.uiAutomation.grantRuntimePermission(context.packageName, Manifest.permission.CAMERA)
         app.onNodeWithContentDescription("Connection details").performClick()
         val wrongIdentity = invitation.readText().replace(Regex("pin=[A-Fa-f0-9]{64}"), "pin=" + "0".repeat(64))
-        app.onNodeWithText("Pairing link").performTextInput(wrongIdentity)
-        app.onNodeWithText("Connect", substring = false).performClick()
-        app.waitUntil(15000) { app.onAllNodesWithText("PC identity does not match", substring = true).fetchSemanticsNodes().isNotEmpty() }
+        app.onNodeWithText("Pairing link").performTextReplacement(wrongIdentity)
+        app.onNodeWithText("Pairing link").performImeAction()
+        val state = (app.activity.application as SynqoraApplication).state
+        try { app.waitUntil(20000) { state.session.device.value.phase == com.synqora.data.ConnectionPhase.Error } }
+        catch (error: AssertionError) { throw AssertionError("Wrong-pin result: ${state.session.device.value.phase}; ${state.session.device.value.error}", error) }
+        check(state.session.device.value.error?.contains("identity", ignoreCase = true) == true) { "Identity rejection failed: ${state.session.device.value.error}" }
         app.onNodeWithText("Pairing link").performTextReplacement(invitation.readText())
         app.onNodeWithText("Connect", substring = false).performScrollTo().performClick()
         try {
-            app.waitUntil(15000) { app.onAllNodesWithText("Connected to ", substring = true).fetchSemanticsNodes().isNotEmpty() }
+            app.waitUntil(15000) { app.onAllNodesWithText("Connected securely", substring = false).fetchSemanticsNodes().isNotEmpty() }
         } catch (error: Exception) {
             val device = (app.activity.application as SynqoraApplication).state.session.device.value
             throw AssertionError("Pairing retry: ${device.phase}; ${device.error}", error)
         }
-        app.onNodeWithText("Done", substring = false).performClick()
         fun shell(command: String) = android.os.ParcelFileDescriptor.AutoCloseInputStream(instrumentation.uiAutomation.executeShellCommand(command)).bufferedReader().use { it.readText() }
         shell("dumpsys gfxinfo com.synqora reset")
 
@@ -39,7 +41,7 @@ class BackendIntegrationTest {
         app.onNodeWithText("Start microphone", substring = false).performScrollTo().performClick()
         app.waitUntil(5000) { app.onAllNodesWithText("Streaming to ", substring = true).fetchSemanticsNodes().isNotEmpty() }
         Thread.sleep(1200) // Real AudioRecord + network time, not animation-clock time.
-        app.onNodeWithContentDescription("Back to Home").performClick()
+        app.onNodeWithContentDescription("Back to Device").performClick()
         app.onAllNodesWithText("Webcam", useUnmergedTree = true).onLast().performScrollTo().performClick()
         app.onNodeWithContentDescription("Start camera").performScrollTo().performClick()
         app.waitUntil(20000) { app.onAllNodesWithText("Streaming to PC", substring = false).fetchSemanticsNodes().isNotEmpty() }
@@ -48,7 +50,7 @@ class BackendIntegrationTest {
         app.runOnIdle { model = (app.activity.application as SynqoraApplication).state }
         app.waitUntil(10000) { model.session.device.value.receivedVideoFrames >= 5 }
         // Activity backgrounding and display sleep must not own the media lifetime.
-        app.runOnUiThread { app.activity.moveTaskToBack(true) }
+        app.activityRule.scenario.moveToState(androidx.lifecycle.Lifecycle.State.CREATED)
         shell("input keyevent 223")
         try {
             Thread.sleep(1500)
@@ -62,15 +64,13 @@ class BackendIntegrationTest {
         } finally {
             shell("input keyevent 224")
             shell("wm dismiss-keyguard")
-            instrumentation.runOnMainSync {
-                app.activity.startActivity(android.content.Intent(app.activity, MainActivity::class.java).addFlags(android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT))
-            }
+            app.activityRule.scenario.moveToState(androidx.lifecycle.Lifecycle.State.RESUMED)
         }
         repeat(4) {
             app.onNodeWithContentDescription("Hide controls").performScrollTo().performClick()
             app.onNodeWithContentDescription("Show controls").performScrollTo().performClick()
         }
-        app.onNodeWithContentDescription("Back to Home").performClick()
+        app.onNodeWithContentDescription("Back to Device").performClick()
         app.onAllNodesWithText("Keyboard", useUnmergedTree = true).onLast().performScrollTo().performClick()
         app.onNodeWithContentDescription("Live keyboard").assertExists()
         app.runOnIdle {
@@ -86,7 +86,7 @@ class BackendIntegrationTest {
             editor.performEditorAction(android.view.inputmethod.EditorInfo.IME_ACTION_DONE)
             keyboard.sendKey("tab")
         }
-        app.onNodeWithContentDescription("Back to Home").performClick()
+        app.onNodeWithContentDescription("Back to Device").performClick()
         app.onAllNodesWithText("Touchpad", useUnmergedTree = true).onLast().performScrollTo().performClick()
         app.onNodeWithContentDescription("Remote touchpad").performScrollTo().performTouchInput { swipe(Offset(80f, 80f), Offset(240f, 150f), 300) }
         app.onNodeWithContentDescription("Remote touchpad").performTouchInput {
@@ -97,23 +97,24 @@ class BackendIntegrationTest {
 
         val previousFrames = model.session.device.value.receivedVideoFrames
         app.waitUntil(10000) { model.session.device.value.receivedVideoFrames >= previousFrames + 5 }
-        app.onNodeWithContentDescription("Back to Home").performClick()
+        app.onNodeWithContentDescription("Back to Device").performClick()
         app.onAllNodesWithText("Webcam", useUnmergedTree = true).onLast().performScrollTo().performClick()
         app.onNodeWithContentDescription("Stop camera").performScrollTo().performClick()
         app.waitUntil(5000) { !model.camera.state.value.active }
         Thread.sleep(800)
         val timing = shell("dumpsys gfxinfo com.synqora framestats")
         android.util.Log.i("SynqoraFrameTimes", timing.substringBefore("---PROFILEDATA---"))
-        app.onNodeWithContentDescription("Back to Home").performClick()
+        app.onNodeWithContentDescription("Back to Device").performClick()
         app.onAllNodesWithText("Microphone", useUnmergedTree = true).onLast().performClick()
         app.onNodeWithText("Stop", substring = false).performScrollTo().performClick()
+        app.onNodeWithContentDescription("Back to Device").performClick()
         app.onNodeWithContentDescription("Connection details").performClick()
         app.onNodeWithText("Disconnect", substring = false).performClick()
-        app.waitUntil(5000) { app.onAllNodesWithText("Connect", substring = false).fetchSemanticsNodes().isNotEmpty() }
+        app.waitUntil(5000) { model.session.device.value.phase == com.synqora.data.ConnectionPhase.Disconnected }
         app.onNodeWithText("Pairing link").performTextReplacement(invitation.readText())
         app.onNodeWithText("Connect", substring = false).performClick()
-        app.waitUntil(10000) { app.onAllNodesWithText("Connected to ", substring = true).fetchSemanticsNodes().isNotEmpty() }
-        app.onNodeWithText("Enable remote controls on your PC", substring = true).assertExists()
-        app.onNodeWithText("Disconnect", substring = false).performClick()
+        app.waitUntil(10000) { model.session.device.value.phase == com.synqora.data.ConnectionPhase.Connected }
+        check(!model.session.device.value.controlsAllowed) { "Input permission must be revoked on disconnect" }
+        app.runOnUiThread { model.session.disconnect() }
     }
 }

@@ -49,12 +49,12 @@ def capture(name):
     with (out / name).open('wb') as f:
         subprocess.run([a.adb, 'exec-out', 'screencap', '-p'], check=True, stdout=f)
 
-home = drawn('Phone and computer. Together.')
+home = drawn('Your devices')
 capture('android-release-overview.png')
-tap(home, 'Settings')
-settings = drawn('Comfort & accessibility')
-capture('android-release-settings.png')
-tap(settings, 'Home')
-drawn('Phone and computer. Together.')
+tap(home, 'Inbox')
+settings = drawn('Sync notifications')
+capture('android-release-inbox.png')
+tap(settings, 'Device')
+drawn('Your devices')
 (out / 'android-package-smoke.json').write_text(json.dumps(dict(version=version, debuggable=False, dashboard=True, settings=True, returnHome=True, emulatorOnly=True), indent=2))
 print(f'Signed release {version}: startup, native screens and navigation passed; not debuggable.')

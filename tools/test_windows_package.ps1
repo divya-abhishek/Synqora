@@ -18,12 +18,12 @@ try {
     if ($process.ExitCode -ne 0 -or -not (Test-Path -LiteralPath (Join-Path $evidencePath 'capture.complete'))) {
         throw "Published Windows app failed startup (exit $($process.ExitCode)). See LOCALAPPDATA\Synqora\Logs\startup.log."
     }
-    foreach ($theme in @('dark','light')) {
-        foreach ($screen in @('overview','microphone','webcam','touchpad','keyboard','settings')) {
+    foreach ($theme in @('dark')) {
+        foreach ($screen in @('overview','inbox','files','photos','calls','microphone','webcam','touchpad','keyboard','settings')) {
             $image = Join-Path $evidencePath "windows-$theme-$screen.png"
             if (-not (Test-Path -LiteralPath $image) -or (Get-Item -LiteralPath $image).Length -lt 1024) { throw "Missing rendered screen: $theme $screen" }
         }
     }
-    Write-Host 'Published Windows startup passed: 12 native screens rendered; exit 0; unrelated working directory.'
+    Write-Host 'Published Windows startup passed: 10 native screens rendered; exit 0; unrelated working directory.'
 }
 finally { if (-not $process.HasExited) { Stop-Process -Id $process.Id } }

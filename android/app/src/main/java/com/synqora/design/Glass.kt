@@ -61,7 +61,7 @@ fun GlassSurface(modifier: Modifier = Modifier, material: String = "Regular", pa
 fun GlassButton(label: String, modifier: Modifier = Modifier, primary: Boolean = false, enabled: Boolean = true, loading: Boolean = false, icon: ImageVector? = null, onClick: () -> Unit) {
     val c = LocalGlass.current
     val source = remember { MutableInteractionSource() }
-    OutlinedButton(onClick, modifier.glassPress(source).heightIn(min = 48.dp), enabled = enabled && !loading, shape = RoundedCornerShape(Tokens.RadiusButton.dp), interactionSource = source, border = BorderStroke(1.dp, c["border"].copy(alpha = .32f)), colors = ButtonDefaults.outlinedButtonColors(containerColor = if (primary) c["accent"] else c["elevated"].copy(alpha = if (c.solid) 1f else .48f), contentColor = c[if (primary) "onAccent" else "text"]), contentPadding = PaddingValues(horizontal = 18.dp, vertical = 12.dp)) {
+    OutlinedButton(onClick, modifier.glassPress(source).heightIn(min = 48.dp), enabled = enabled && !loading, shape = RoundedCornerShape(26.dp), interactionSource = source, border = BorderStroke(1.dp, c["text"].copy(alpha = .12f)), colors = ButtonDefaults.outlinedButtonColors(containerColor = if (primary) c["accent"] else c["elevated"].copy(alpha = if (c.solid) 1f else .24f), contentColor = c[if (primary) "onAccent" else "text"]), contentPadding = PaddingValues(horizontal = 18.dp, vertical = 12.dp)) {
         if (loading) { CircularProgressIndicator(Modifier.size(18.dp), color = c[if (primary) "onAccent" else "accent"], strokeWidth = 2.dp); Spacer(Modifier.width(10.dp)) }
         else if (icon != null) { Icon(icon, null, Modifier.size(20.dp)); Spacer(Modifier.width(8.dp)) }
         Text(label, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)

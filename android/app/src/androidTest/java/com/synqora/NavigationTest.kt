@@ -10,15 +10,16 @@ class NavigationTest {
     @get:Rule val app = createAndroidComposeRule<MainActivity>()
 
     @Test fun simplified_navigation_and_disconnected_controls() {
+        app.runOnUiThread { (app.activity.application as SynqoraApplication).state.motion(false) }
         app.onNodeWithText("Tools").assertDoesNotExist()
         app.onNodeWithText("Media").assertDoesNotExist()
-        app.onAllNodesWithText("Keyboard", useUnmergedTree = true).onLast().performClick()
+        app.onAllNodesWithText("Keyboard", useUnmergedTree = true).onLast().performScrollTo().performClick()
         app.onNodeWithContentDescription("Backspace").assertIsNotEnabled()
         app.onNodeWithText("Send to computer").assertDoesNotExist()
         app.onNodeWithContentDescription("Back to Home").performClick()
         app.onAllNodesWithText("Microphone", useUnmergedTree = true).onLast().performClick()
-        app.onNodeWithText("Mute", substring = false).performScrollTo().performClick()
-        app.onNodeWithText("Unmute", substring = false).assertExists()
+        app.onNodeWithContentDescription("Mute").performScrollTo().performClick()
+        app.onNodeWithContentDescription("Unmute").assertExists()
         app.onNodeWithContentDescription("Input gain").performScrollTo().performSemanticsAction(SemanticsActions.SetProgress) { it(.4f) }
         app.onNodeWithText("40%").assertExists()
         app.onNodeWithContentDescription("Back to Home").performClick()

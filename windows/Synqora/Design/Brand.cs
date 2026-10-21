@@ -6,18 +6,15 @@ namespace Synqora.Design;
 
 public static class Brand
 {
-    // Same original vector as brand/synqora-mark.svg, tinted for readable light/dark UI.
+    // Original paired-loop symbol. Launcher exports use a larger safe-area canvas.
     public static UIElement Mark(Glass glass, double size = 30)
     {
-        var figure = new PathFigure { StartPoint = new(66, 36), IsClosed = false };
-        figure.Segments.Add(new BezierSegment { Point1 = new(60, 29), Point2 = new(48, 28), Point3 = new(40, 35) });
-        figure.Segments.Add(new BezierSegment { Point1 = new(30, 44), Point2 = new(38, 51), Point3 = new(48, 55) });
-        figure.Segments.Add(new LineSegment { Point = new(60, 60) });
-        figure.Segments.Add(new BezierSegment { Point1 = new(72, 66), Point2 = new(64, 79), Point3 = new(53, 79) });
-        figure.Segments.Add(new BezierSegment { Point1 = new(45, 79), Point2 = new(39, 75), Point3 = new(35, 70) });
-        var geometry = new PathGeometry(); geometry.Figures.Add(figure);
-        var canvas = new Canvas { Width = 108, Height = 108 };
-        canvas.Children.Add(new Microsoft.UI.Xaml.Shapes.Path { Data = geometry, Stroke = glass.Brush("accent"), StrokeThickness = 7.5, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round, StrokeLineJoin = PenLineJoin.Round });
-        return new Viewbox { Width = size, Height = size, Child = canvas };
+        var canvas = new Canvas { Width = 72, Height = 72 };
+        string[] paths = ["M54 40 H44 C36 40 30 46 30 54 V65 C30 73 36 79 44 79 H52 C60 79 66 73 66 65 V57", "M54 68 H64 C72 68 78 62 78 54 V43 C78 35 72 29 64 29 H56 C48 29 42 35 42 43 V51"];
+        foreach (var data in paths) {
+            var shape = (Microsoft.UI.Xaml.Shapes.Path)Microsoft.UI.Xaml.Markup.XamlReader.Load($"<Path xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' Data='{data}' StrokeThickness='8' StrokeStartLineCap='Round' StrokeEndLineCap='Round' StrokeLineJoin='Round'/>");
+            shape.Stroke = glass.Brush("accent"); Canvas.SetLeft(shape, -18); Canvas.SetTop(shape, -18); canvas.Children.Add(shape);
+        }
+        return new Viewbox { Width = size, Height = size, Child = canvas, IsHitTestVisible = false };
     }
 }

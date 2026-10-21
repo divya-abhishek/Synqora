@@ -112,27 +112,32 @@ class MainActivity : ComponentActivity() {
     var scanning by remember { mutableStateOf(false) }
     var pairingError by remember { mutableStateOf<String?>(null) }
     val c = LocalGlass.current
+    val backgroundLayer = rememberGraphicsLayer()
+    val backdrop = remember(backgroundLayer) { GlassBackdrop(backgroundLayer) }
     val saved = rememberSaveableStateHolder()
     val device by state.session.device.collectAsStateWithLifecycle()
     val camera by state.camera.state.collectAsStateWithLifecycle()
     val scanPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted -> if (granted) { state.camera.stop(); scanning = true } else pairingError = "Camera permission is needed to scan. You can paste the pairing link instead." }
     val navigate: (String) -> Unit = { page = it }
     BackHandler(page != "Overview") { page = "Overview" }
+    CompositionLocalProvider(LocalBackdrop provides backdrop) {
     Box(Modifier.fillMaxSize().background(c["background"]).imePadding()) {
+        val recordLens = page in listOf("Overview", "Settings") && Build.VERSION.SDK_INT >= 33 && c.rich && !c.solid && !c.economy
+        Box(Modifier.fillMaxSize().then(if (recordLens) Modifier.recordBackdrop(backdrop) else Modifier).background(c["background"])) {
         Ambience()
         Column(Modifier.fillMaxSize().statusBarsPadding()) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     if (page != "Overview" && page != "Settings") GlassIconButton(Icons.AutoMirrored.Outlined.ArrowBack, "Back to Home") { navigate("Overview") }
-                    Image(painterResource(R.drawable.synqora_mark), null, Modifier.size(28.dp), colorFilter = ColorFilter.tint(c["accent"]))
-                    GlassText("Synqora", 18, bold = true)
+                    if (page in listOf("Overview", "Settings")) {
+                        Image(painterResource(R.drawable.synqora_mark), null, Modifier.size(28.dp), colorFilter = ColorFilter.tint(c["accent"]))
+                        GlassText("Synqora", 16, bold = true)
+                    } else GlassText(page, 16, bold = true)
                 }
                 GlassTooltip("Connection details") { GlassIconButton(Icons.Outlined.Devices, "Connection details", onClick = { deviceDetails = true }) }
             }
-            AnimatedContent(page, Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.TopCenter, transitionSpec = {
-                if (c.motion) fadeIn(tween(100)).togetherWith(fadeOut(tween(80)))
-                else EnterTransition.None.togetherWith(ExitTransition.None)
-            }, label = "page") { destination ->
+            Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
+                val destination = page
                 saved.SaveableStateProvider(destination) {
                     val scroll = rememberScrollState()
                     Column(Modifier.fillMaxHeight().widthIn(max = 680.dp).fillMaxWidth().verticalScroll(scroll).padding(horizontal = 20.dp).padding(top = 12.dp, bottom = if (destination in listOf("Overview", "Settings")) 108.dp else 24.dp).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(20.dp)) {
@@ -148,8 +153,10 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+        }
         if (page in listOf("Overview", "Settings")) GlassNavigationBar(page, Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(horizontal = 48.dp, vertical = 12.dp), navigate)
         if (state.displayDimmed) DimmedDisplay { state.dimDisplay(false) }
+    }
     }
 
     if (deviceDetails) GlassModal({ deviceDetails = false }, "Your connection") {
@@ -215,44 +222,36 @@ private fun iconFor(page: String): ImageVector = when (page) { "Microphone" -> I
 
 @Composable private fun GlassNavigationBar(page: String, modifier: Modifier, navigate: (String) -> Unit) {
     val c = LocalGlass.current
-    val selection by animateFloatAsState(if (page == "Settings") 1f else 0f, if (c.motion) spring(1f, 900f) else snap(), label = "floating navigation lens")
-    GlassSurface(modifier.widthIn(max = 320.dp).fillMaxWidth(), "Elevated", 6.dp, radius = 34.dp) {
-        BoxWithConstraints(Modifier.fillMaxWidth()) {
-            val width = maxWidth / 2
-            val density = LocalDensity.current
-            Box(Modifier.width(width).height(52.dp).graphicsLayer { translationX = with(density) { width.toPx() } * selection }
-                .clip(RoundedCornerShape(28.dp)).background(Brush.verticalGradient(listOf(c["text"].copy(alpha = .16f), c["text"].copy(alpha = .06f))))
-                .border(1.dp, c["text"].copy(alpha = .18f), RoundedCornerShape(28.dp)))
-            Row(Modifier.fillMaxWidth()) {
+    val source = remember { MutableInteractionSource() }
+    GlassLens(modifier.widthIn(max = 288.dp).fillMaxWidth().glassPress(source), source) {
+            Row(Modifier.fillMaxWidth().padding(6.dp)) {
                 listOf("Home" to Icons.Outlined.GridView, "Settings" to Icons.Outlined.Tune).forEach { (label, icon) ->
                     val selected = (label == "Home" && page == "Overview") || label == page
-                    val source = remember { MutableInteractionSource() }
-                    TextButton(onClick = { navigate(if (label == "Home") "Overview" else label) }, modifier = Modifier.weight(1f).heightIn(min = 52.dp).glassPress(source).semantics { this.selected = selected }, interactionSource = source, shape = RoundedCornerShape(28.dp), colors = ButtonDefaults.textButtonColors(contentColor = c[if (selected) "text" else "muted"])) {
+                    TextButton(onClick = { navigate(if (label == "Home") "Overview" else label) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp).semantics { this.selected = selected }, interactionSource = source, shape = RoundedCornerShape(26.dp), colors = ButtonDefaults.textButtonColors(containerColor = if (selected) c["text"].copy(alpha = .1f) else Color.Transparent, contentColor = c[if (selected) "text" else "muted"])) {
                         Icon(icon, null, Modifier.size(20.dp)); Spacer(Modifier.width(8.dp)); Text(label, fontSize = 13.sp)
                     }
                 }
             }
-        }
     }
 }
 
 @Composable private fun ColumnScope.Dashboard(device: DeviceState, microphone: Boolean, camera: Boolean, navigate: (String) -> Unit, details: () -> Unit) {
-    Heading("", "Home", "Your PC, a little closer.")
-    GlassSurface(Modifier.fillMaxWidth(), "Regular", 22.dp) {
+    Heading("", "Your workspace", "Phone and computer. Together.")
+    Column(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            GlassSurface(material = "Elevated", padding = 14.dp, radius = 20.dp) { GlassIcon(Icons.Outlined.LaptopWindows, size = 28.dp) }
+            GlassIcon(Icons.Outlined.LaptopWindows, size = 36.dp)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                GlassText(if (device.phase == ConnectionPhase.Connected) "YOUR COMPUTER" else "YOUR NEXT CONNECTION", 10, "muted", true)
-                GlassText(if (device.phase == ConnectionPhase.Connected) device.name else "Pair your PC", 23, bold = true)
+                GlassText("Your computer", 12, "muted")
+                GlassText(if (device.phase == ConnectionPhase.Connected) device.name else "Your PC", 22, bold = true)
+                GlassText(when(device.phase) { ConnectionPhase.Connected -> "Connected · ${device.latencyMs ?: "—"} ms"; ConnectionPhase.Connecting -> "Connecting…"; ConnectionPhase.Error -> "Connection failed"; else -> "Not connected" }, 12, "muted")
             }
+            GlassButton(if (device.phase == ConnectionPhase.Connected) "Details" else "Connect", primary = true, loading = device.phase == ConnectionPhase.Connecting, onClick = details)
         }
-        GlassStatusIndicator(when(device.phase) { ConnectionPhase.Connected -> "Connected · ${device.latencyMs ?: "—"} ms"; ConnectionPhase.Connecting -> "Connecting…"; ConnectionPhase.Error -> "Connection failed"; else -> "Not connected" }, device.phase == ConnectionPhase.Connected)
-        GlassButton(if (device.phase == ConnectionPhase.Connected) "Device details" else "Connect to PC", Modifier.fillMaxWidth(), true, loading = device.phase == ConnectionPhase.Connecting, icon = Icons.Outlined.Link, onClick = details)
     }
-    GlassText("Your controls", 16, bold = true)
+    Rule()
     val features = listOf("Microphone" to if (microphone) "Streaming audio" else "Use your phone’s mic", "Webcam" to if (camera) "Camera active" else "Use your phone’s camera", "Touchpad" to "Move, tap and scroll", "Keyboard" to "Type directly on your PC")
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        features.forEach { (name, description) -> GlassFeatureTile(name, description, Modifier.fillMaxWidth()) { navigate(name) } }
+        features.forEachIndexed { index, (name, description) -> GlassFeatureTile(name, description, Modifier.fillMaxWidth()) { navigate(name) }; if (index < 3) Rule() }
     }
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) { GlassIcon(Icons.Outlined.Lock, size = 14.dp, token = "muted"); GlassText("Encrypted. Direct to your PC.", 12, "muted") }
 }
@@ -261,7 +260,7 @@ private fun iconFor(page: String): ImageVector = when (page) { "Microphone" -> I
     val source = remember { MutableInteractionSource() }
     OutlinedButton(onClick, modifier.glassPress(source).heightIn(min = 76.dp), interactionSource = source, shape = RoundedCornerShape(18.dp), border = null, colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.Transparent, contentColor = c["text"]), contentPadding = PaddingValues(horizontal = 8.dp, vertical = 12.dp)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            Box(Modifier.size(46.dp).clip(RoundedCornerShape(17.dp)).background(c["elevated"].copy(alpha = .6f)).border(1.dp, c["text"].copy(alpha = .08f), RoundedCornerShape(17.dp)), contentAlignment = Alignment.Center) { GlassIcon(iconFor(name), size = 22.dp) }
+            Box(Modifier.size(36.dp), contentAlignment = Alignment.Center) { GlassIcon(iconFor(name), size = 24.dp) }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) { GlassText(name, 16, bold = true); GlassText(subtitle, 12, "muted") }
             GlassIcon(Icons.Outlined.ChevronRight, size = 16.dp, token = "muted")
         }
@@ -275,14 +274,14 @@ private fun iconFor(page: String): ImageVector = when (page) { "Microphone" -> I
     val device by state.session.device.collectAsStateWithLifecycle()
     var permissionError by remember { mutableStateOf<String?>(null) }
     val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted -> if (granted) state.startMicrophone() else permissionError = "Allow microphone access in Android settings to use your microphone." }
-    Heading("", "Microphone", "Your voice, in focus.")
-    GlassSurface(Modifier.fillMaxWidth(), "Regular", 22.dp) {
+    Heading("", "Sound, clearly.", "Phone audio, ready for your PC.")
+    Column(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             GlassText("Input monitor", 16, bold = true)
             GlassStatusIndicator(if (running && state.muted) "Muted" else if (running) "Live" else "Off", running && !state.muted)
         }
         InputWaveform(monitor, state.muted, state.gain)
-        GlassText(if (running && device.phase == ConnectionPhase.Connected) "Streaming to ${device.name}" else if (running) "Listening on this phone" else "Ready when you are", 22, bold = true)
+        GlassText(if (running && device.phase == ConnectionPhase.Connected) "Streaming to ${device.name}" else if (running) "Listening on this phone" else "Ready when you are", 20, bold = true)
         GlassText(if (device.phase == ConnectionPhase.Connected) "Your audio goes directly to your PC." else "Try your microphone, then connect a PC to share.", 13, "muted")
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
             GlassButton(if (running) "Stop" else "Start microphone", Modifier.weight(1f), true, icon = if (running) Icons.Outlined.Stop else Icons.Outlined.Mic) {
@@ -294,8 +293,10 @@ private fun iconFor(page: String): ImageVector = when (page) { "Microphone" -> I
         }
         (permissionError ?: state.microphoneError ?: device.error)?.let { GlassText(it, 13, "danger", modifier = Modifier.semantics { liveRegion = LiveRegionMode.Assertive }) }
     }
-    GlassCard(Modifier.fillMaxWidth()) { GlassSlider("Input gain", state.gain, state::gain); GlassText("48 kHz · 16-bit · mono", 12, "muted") }
-    GlassCard(Modifier.fillMaxWidth()) {
+    Rule()
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) { GlassSlider("Input gain", state.gain, state::gain); GlassText("48 kHz · 16-bit · mono", 12, "muted") }
+    Rule()
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) { GlassIcon(Icons.Outlined.LaptopWindows, size = 20.dp); GlassText("Listen in your PC apps", 16, bold = true) }
         GlassText("In Synqora on Windows, complete microphone setup. Then choose the recording device shown there in Meet or your audio app.", 13, "muted")
         if (device.phase == ConnectionPhase.Connected) GlassStatusIndicator(if (device.receivedAudioBytes > 0) "Audio received · ${device.latencyMs ?: "—"} ms" else "Waiting for audio on PC", device.receivedAudioBytes > 0)
@@ -319,7 +320,7 @@ private fun iconFor(page: String): ImageVector = when (page) { "Microphone" -> I
     val viewport = LocalConfiguration.current
     val landscape = viewport.screenWidthDp > viewport.screenHeightDp
     if (landscape) GlassDisplay("Webcam", 26)
-    else Heading("", "Webcam", "Your phone, in full view.")
+    else Heading("", "A better view.", "Your phone camera, on your PC.")
     val c = LocalGlass.current
     val previewHeight = (viewport.screenHeightDp * if (landscape) .38f else .44f).coerceAtLeast(150f).dp
     Box(Modifier.fillMaxWidth().height(previewHeight).clip(RoundedCornerShape(28.dp)).background(c["background"]).border(1.dp, c["border"].copy(alpha = .6f), RoundedCornerShape(28.dp))) {
@@ -339,7 +340,7 @@ private fun iconFor(page: String): ImageVector = when (page) { "Microphone" -> I
         }
     }
     var cameraMode by remember { mutableStateOf(state.camera.mode) }
-    GlassCard(Modifier.fillMaxWidth()) {
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(18.dp)) {
         GlassDropdown("Video quality", listOf("Smooth · 60 fps", "Detail · 30 fps", "Economy · 60 fps"), cameraMode) { cameraMode = it; state.camera.mode(it) }
         GlassSwitch("Include microphone", "Send audio with your camera", state.microphoneRunning) { enabled ->
             if (!enabled) state.stopMicrophone()
@@ -374,9 +375,9 @@ private fun iconFor(page: String): ImageVector = when (page) { "Microphone" -> I
 @Composable private fun ColumnScope.Touchpad(state: SynqoraState, connected: Boolean) {
     val c = LocalGlass.current
     var keyboard by remember { mutableStateOf(false) }
-    Heading("", "Touchpad", "One finger to move. Two fingers to scroll.")
+    Heading("", "Point. Tap. Scroll.", "One finger to move. Two fingers to scroll.")
     val height = (LocalConfiguration.current.screenHeightDp * .38f).coerceIn(200f, 380f).dp
-    GlassSurface(Modifier.fillMaxWidth(), "Subtle", 8.dp) {
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).border(1.dp, c["text"].copy(alpha = .1f), RoundedCornerShape(20.dp)).padding(4.dp)) {
         AndroidView(factory = { RawTouchpadView(it).apply { session = state.session } }, modifier = Modifier.fillMaxWidth().height(height).semantics { contentDescription = "Remote touchpad" }, update = { it.ready = connected; it.dark = c.dark; it.haptics = state.haptics })
     }
     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -386,7 +387,8 @@ private fun iconFor(page: String): ImageVector = when (page) { "Microphone" -> I
     }
     if (keyboard) LiveKeyboardInput(state, connected, true)
     GlassStatusIndicator(if (connected) "Remote input connected" else "Allow remote input on your PC", connected)
-    GlassCard { GlassSwitch("Touch feedback", "Light haptics when you click", state.haptics, state::haptics) }
+    Rule()
+    GlassSwitch("Touch feedback", "Light haptics when you click", state.haptics, state::haptics)
 }
 
 @Composable private fun LiveKeyboardInput(state: SynqoraState, connected: Boolean, focus: Boolean, attach: (LiveKeyboardView) -> Unit = {}) {
@@ -395,8 +397,8 @@ private fun iconFor(page: String): ImageVector = when (page) { "Microphone" -> I
 }
 @Composable private fun ColumnScope.Keyboard(state: SynqoraState, connected: Boolean) {
     var input by remember { mutableStateOf<LiveKeyboardView?>(null) }
-    Heading("", "Keyboard", "Type here. It appears on your PC immediately.")
-    GlassSurface(Modifier.fillMaxWidth(), "Subtle", 12.dp) { LiveKeyboardInput(state, connected, true) { input = it } }
+    Heading("", "Every keystroke.", "Type here. It appears on your PC immediately.")
+    LiveKeyboardInput(state, connected, true) { input = it }
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         GlassButton("⌫", Modifier.weight(1f).semantics { contentDescription = "Backspace" }, enabled = connected) { input?.sendKey("backspace") }
         GlassButton("Tab", Modifier.weight(1f), enabled = connected) { input?.sendKey("tab") }
@@ -414,19 +416,22 @@ private fun iconFor(page: String): ImageVector = when (page) { "Microphone" -> I
 
 @Composable private fun ColumnScope.SettingsScreen(state: SynqoraState) {
     Heading("", "Settings", "Make Synqora feel right for you.")
-    GlassCard(Modifier.fillMaxWidth()) {
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(20.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) { GlassIcon(Icons.Outlined.Palette); GlassText("Appearance", 20, bold = true) }
         GlassDropdown("Color theme", listOf("System", "Light", "Dark"), state.theme, state::theme)
         GlassDropdown("Visual effects quality", listOf("Balanced", "Economy", "High"), state.effects, state::effects)
     }
-    GlassCard(Modifier.fillMaxWidth()) {
+    Rule()
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(20.dp)) {
         GlassText("Comfort & accessibility", 20, bold = true)
         GlassSwitch("Reduce motion", "Calmer, immediate transitions", state.reduceMotion, state::motion)
         GlassSwitch("Reduce transparency", "Solid surfaces with clear contrast", state.reduceTransparency, state::transparency)
         GlassText(if (LocalGlass.current.economy) "Effects are reduced to keep controls responsive." else "Animation settings, battery saver, thermal pressure and sustained rendering stress reduce decorative effects automatically.", 12, "muted")
     }
     val device by state.session.device.collectAsStateWithLifecycle()
-    GlassCard(Modifier.fillMaxWidth()) { GlassText("Connection & privacy", 20, bold = true); GlassText(if (device.phase == ConnectionPhase.Connected) "Encrypted local connection to ${device.name}. Your foreground session continues with the screen locked. Use its notification to disconnect." else "No computer connected. Capture asks for permission when you start it and stays visible in an active session notification.", 13, "muted") }
-    GlassText("Synqora 0.3.0", 10, "muted")
+    Rule()
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) { GlassText("Connection & privacy", 18, bold = true); GlassText(if (device.phase == ConnectionPhase.Connected) "Encrypted local connection to ${device.name}. Your foreground session continues with the screen locked. Use its notification to disconnect." else "No computer connected. Capture asks for permission when you start it and stays visible in an active session notification.", 13, "muted") }
+    GlassText("Synqora 0.4.0 preview", 12, "muted")
 }
+@Composable private fun Rule() = HorizontalDivider(color = LocalGlass.current["text"].copy(alpha = .08f))
 @Composable private fun Metric(label: String, value: String) { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) { GlassText(label, 10, "muted", true); GlassText(value, 22, bold = true) } }

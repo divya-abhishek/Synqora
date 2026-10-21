@@ -18,7 +18,8 @@ $signer = Get-ChildItem -LiteralPath (Join-Path $androidSdk 'build-tools') -Filt
 if (-not $signer) { throw 'Android build-tools apksigner is required to verify the APK.' }
 & $signer.FullName verify --verbose $apk
 if ($LASTEXITCODE -ne 0) { throw 'APK signature verification failed.' }
-$destination = if ($Development) { Join-Path $taskRoot 'dist\development\0.3.0\Synqora-0.3.0-dev-android.apk' } else { Join-Path $taskRoot 'dist\Synqora-0.3.0-android.apk' }
+$version = $gates.version
+$destination = if ($Development) { Join-Path $taskRoot "dist\development\$version\Synqora-$version-dev-android.apk" } else { Join-Path $taskRoot "dist\Synqora-$version-android.apk" }
 New-Item -ItemType Directory -Path (Split-Path -Parent $destination) -Force | Out-Null
 Copy-Item -LiteralPath $apk -Destination $destination
 Get-FileHash -LiteralPath $destination -Algorithm SHA256

@@ -7,8 +7,9 @@ if (-not $Development) {
     $missingGates = @($requiredGates | Where-Object { $gates.$_ -ne $true })
     if ($missingGates.Count) { throw ('Production packaging is not ready: ' + ($missingGates -join ', ') + '. Use -Development for a clearly labeled review build.') }
 }
-$artifactFolder = if ($Development) { Join-Path $taskRoot 'dist\development\0.3.0' } else { Join-Path $taskRoot 'dist' }
-$artifactName = if ($Development) { 'Synqora-0.3.0-dev-win-x64' } else { 'Synqora-0.3.0-win-x64' }
+$version = $gates.version
+$artifactFolder = if ($Development) { Join-Path $taskRoot "dist\development\$version" } else { Join-Path $taskRoot 'dist' }
+$artifactName = if ($Development) { "Synqora-$version-dev-win-x64" } else { "Synqora-$version-win-x64" }
 if (-not (Test-Path -LiteralPath (Join-Path $taskRoot 'native\camera\build\Synqora.Camera.dll'))) { throw 'Build the native camera source with tools/build_camera.cmd before packaging.' }
 $publishFolder = Join-Path $taskRoot 'dist\windows-portable'
 if (-not $SkipPublish) {
@@ -29,6 +30,13 @@ if (-not (Test-Path -LiteralPath $vcFolder)) {
 Get-ChildItem -LiteralPath $vcFolder -Filter '*.dll' | Copy-Item -Destination $publishFolder
 Copy-Item (Join-Path $taskRoot 'README.md') -Destination (Join-Path $publishFolder 'README.md')
 Copy-Item (Join-Path $taskRoot 'THIRD-PARTY-NOTICES.md') -Destination $publishFolder
+Copy-Item (Join-Path $taskRoot 'LICENSE') -Destination $publishFolder
+$documentation = Join-Path $publishFolder 'docs'
+New-Item -ItemType Directory -Path $documentation -Force | Out-Null
+foreach ($guide in @('INSTALLATION.md', 'VALIDATION.md', 'DESIGN.md', 'DEVICE-INTEGRATION.md', 'SCREENSHOTS.md')) {
+    Copy-Item (Join-Path $taskRoot "docs\$guide") -Destination $documentation
+}
+Copy-Item (Join-Path $taskRoot 'docs\screenshots') -Destination $documentation -Recurse -Force
 # Redistribute the original vendor archive unchanged. Its installer is not run by
 # this MSI. The app explains the separate vendor setup, attribution and donationware.
 $microphoneArchive = Join-Path $localFolder 'vbcable\VBCABLE_Driver_Pack45.zip'

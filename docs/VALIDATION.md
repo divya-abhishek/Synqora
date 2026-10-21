@@ -1,4 +1,17 @@
-# Validation — Synqora 0.3.0 / 21 October 2026
+# Validation — Synqora 0.4.0 / 21 October 2026
+
+## 0.4 development preview
+
+- New Windows sidebar/workspace, per-button selection, finite content columns and cached pages passed 144 horizontal-bounds/selection checks across requested 720, 1080, 1920 and 2560-pixel sizes and live resizing. Native screenshots cover all six screens in both themes. The visible source build was also maximized and navigated through the Windows UI; settled layout and selection were correct. The installed 0.3 copy remains unchanged until the user upgrades.
+- Android navigation, disconnected key states, mute, gain and reduced-motion controls passed the actual Compose interaction test. AudioRecord/CameraX, pinned TLS, screen-off streaming, raw pointer/scroll/click, live IME edits/keys and reconnect permission revocation passed against an isolated receiver.
+- Android streaming navigation before bounding the optical sample: 541 frames, 15.16% jank, p50 24 ms, p95 77 ms. Sampling only a 136-dp bottom strip and skipping recording on feature/fallback screens measured 585 frames, 7.18% jank, p50 18 ms, p95 36 ms. Both used the API 35 emulator with simultaneous audio/video and actual navigation touches. This is development evidence, not a controlled physical-device benchmark or a passed 60 FPS gate.
+- Final Balanced-quality check after a fresh emulator boot, with build/compiler processes stopped and prebuilt instrumentation: 566 frames, 18.55% jank, p50 23 ms, p95 57 ms. Audio/video and actual navigation touches reached the isolated receiver. This is the final reported result; the earlier 7.18% result is not a guaranteed improvement or the final build's acceptance result. Late optical experiments measured 77–86% jank in the loaded emulator; chained/multi-sample blur was removed, and the remaining single-sample refractive lens is restricted to optional High quality. Balanced does not record a backdrop layer. GPU duration now contributes to decorative-effects fallback. Sustained 60 FPS is not accepted.
+- The native Windows receiver decoded 209 frames into 720×1280 and independently sampled a non-flat 1280×720 camera source, with no media errors. UI rendering-callback p95 was 9.20 ms during streaming; this is not GPU presentation timing.
+- Android screenshots cover all six screens in both themes, 720×1600 and 1920×1080 viewports, and Settings at 1.6 font scale. Public app-only Windows screenshots use a generic machine label. No private desktop screenshots or pairing invitations are published.
+- Windows Release build passed with zero warnings/errors. Android debug/unit/lint checks passed; lint reported zero errors and 28 warnings. Shared tokens and semantic palette checks pass (dark minimum 6.64:1; light 4.89:1 against the tested endpoints).
+- The initial Windows optical-transform experiment crashed the native compositor. That transform was removed; the control effect uses blur and tint only. Windows does not provide exact refractive optics. Android 13+ has an original app-content lens shader, with fallback on older or constrained devices.
+- Physical-phone acceptance, external-app audio capture, installation lifecycle and frame-time targets remain open. No original unsigned driver was installed or packaged. Production release gates remain false.
+- Final distribution checks: all 854 MSI files matched the published payload; both publish and extracted MSI payload rendered 12 screen/theme combinations from an unrelated working directory. No installer actions were executed. The minified Android release APK passed v2 signature verification, non-debuggable startup, Settings navigation and return to Home on the emulator.
 
 ## 0.3 development revision
 
@@ -13,7 +26,7 @@
 
 Development evidence only. Protocol tests and native screen rendering do not establish selectable devices in Google Meet or Windows Camera.
 
-## Current checks
+## Historical 0.2 verification matrix
 
 | Check | Result and scope |
 | --- | --- |
@@ -37,7 +50,7 @@ The isolated input sink records per-character edits and keys producing “Synqor
 
 Emulator microphone PCM can be silent. Delivery does not establish audible fidelity, camera quality, Wi-Fi jitter, A/V sync or selectable Windows endpoints.
 
-## Performance
+## Historical 0.2 performance
 
 API 35 emulator, host OpenGL on RTX 2060, 1080×2400 / density 420. The current real-clock workflow performs 24 actual Home/Settings touches while simultaneous audio/camera streams reach the receiver.
 

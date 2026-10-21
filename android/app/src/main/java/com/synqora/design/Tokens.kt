@@ -33,13 +33,13 @@ object Tokens {
         "ambience" to Color(0xFFD6DCDC),
     )
     const val MotionPress = 120
-    const val MotionHover = 160
-    const val MotionSelect = 220
-    const val MotionNavigation = 280
-    const val MotionPanel = 320
-    const val MotionModal = 360
+    const val MotionHover = 140
+    const val MotionSelect = 100
+    const val MotionNavigation = 100
+    const val MotionPanel = 220
+    const val MotionModal = 260
     const val RadiusSmall = 12
-    const val RadiusButton = 14
+    const val RadiusButton = 24
     const val RadiusCard = 20
     const val RadiusPanel = 24
     const val RadiusModal = 28

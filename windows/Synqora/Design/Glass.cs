@@ -14,7 +14,6 @@ namespace Synqora.Design;
 
 public sealed class Glass(Preferences preferences)
 {
-    private readonly System.Runtime.CompilerServices.ConditionalWeakTable<UIElement, SpringVector3NaturalMotionAnimation> selectionAnimations = new();
     public bool Dark { get; set; } = true;
     public bool HighContrast => new Windows.UI.ViewManagement.AccessibilitySettings().HighContrast;
     public bool Motion => !preferences.ReducedMotion && new Windows.UI.ViewManagement.UISettings().AnimationsEnabled;
@@ -40,18 +39,6 @@ public sealed class Glass(Preferences preferences)
         var shape = visual.Compositor.CreateRoundedRectangleGeometry(); shape.CornerRadius = new(radius);
         visual.Clip = visual.Compositor.CreateGeometricClip(shape);
         element.SizeChanged += (_, _) => shape.Size = new((float)element.ActualWidth, (float)element.ActualHeight);
-    }
-    public void MoveSelection(Border highlight, Button item, UIElement container, bool animate) {
-        if (item.ActualWidth <= 0) return;
-        highlight.Width = item.ActualWidth;
-        var point = item.TransformToVisual(container).TransformPoint(new Windows.Foundation.Point(0, 0));
-        var compositor = CompositionTarget.GetCompositorForCurrentThread();
-        var target = new Vector3((float)point.X, 0, 0);
-        var spring = selectionAnimations.GetValue(highlight, _ => compositor.CreateSpringVector3Animation());
-        spring.Target = "Translation"; spring.FinalValue = target; spring.DampingRatio = .9f; spring.Period = TimeSpan.FromMilliseconds(260);
-        if (animate && Motion) {
-            highlight.StartAnimation(spring);
-        } else { highlight.StopAnimation(spring); highlight.Translation = target; }
     }
     public FontIcon Icon(string glyph, double size = 20, string color = "accent")
         => new() { Glyph = glyph, FontFamily = new FontFamily("Segoe Fluent Icons"), FontSize = size, Foreground = Brush(color), IsHitTestVisible = false, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Center };
@@ -88,13 +75,29 @@ public sealed class Glass(Preferences preferences)
         return b;
     }
     public Border Card(UIElement content) => Surface(content, "Subtle");
+    public Border Section(UIElement content, double padding = 0) => new() { Child = content, Padding = new(padding), HorizontalAlignment = HorizontalAlignment.Stretch };
+    public Border Rule() => new() { Height = 1, Background = Brush("text", .07), HorizontalAlignment = HorizontalAlignment.Stretch };
+    public Grid Between(FrameworkElement left, FrameworkElement right)
+    {
+        var row = new Grid { ColumnSpacing = 16 }; row.ColumnDefinitions.Add(new() { Width = new(1, GridUnitType.Star) }); row.ColumnDefinitions.Add(new() { Width = GridLength.Auto });
+        row.Children.Add(left); Grid.SetColumn(right, 1); row.Children.Add(right); return row;
+    }
+    public Grid Leading(FrameworkElement icon, FrameworkElement content)
+    {
+        var row = new Grid { ColumnSpacing = 16 }; row.ColumnDefinitions.Add(new() { Width = GridLength.Auto }); row.ColumnDefinitions.Add(new() { Width = new(1, GridUnitType.Star) });
+        row.Children.Add(icon); Grid.SetColumn(content, 1); row.Children.Add(content); return row;
+    }
     public Button Button(string label, Action action, bool primary = false, string? glyph = null, bool enabled = true)
     {
-        var b = new Button { Content = glyph is null ? Text(label, 14, primary ? "onAccent" : "text", true) : Row(10, Icon(glyph, 18, primary ? "onAccent" : "accent"), Text(label, 14, primary ? "onAccent" : "text", true)), Background = Brush(primary ? "accent" : "elevated", primary || Solid ? 1 : .48), BorderBrush = Brush("border", .32), BorderThickness = new(1), CornerRadius = new(Tokens.RadiusButton), Padding = new(18, 12, 18, 12), MinHeight = 48, IsEnabled = enabled, HorizontalAlignment = HorizontalAlignment.Left };
+        var b = new Button { Content = glyph is null ? Text(label, 14, primary ? "onAccent" : "text", true) : Row(10, Icon(glyph, 18, primary ? "onAccent" : "accent"), Text(label, 14, primary ? "onAccent" : "text", true)), Background = Brush(primary ? "accent" : "elevated", primary || Solid ? 1 : .28), BorderBrush = Brush("text", primary ? .03 : .1), BorderThickness = new(1), CornerRadius = new(24), Padding = new(18, 11, 18, 11), MinHeight = 46, IsEnabled = enabled, HorizontalAlignment = HorizontalAlignment.Left, VerticalContentAlignment = VerticalAlignment.Center };
         b.Resources["ButtonBackgroundPointerOver"] = Brush(primary ? "accent" : "elevated", primary || Solid ? 1 : .85);
         b.Resources["ButtonBackgroundPressed"] = Brush(primary ? "accent" : "elevated", primary || Solid ? .85 : 1);
         b.Resources["ButtonBorderBrushPointerOver"] = Brush("text", .3);
         b.Resources["ButtonBorderBrushPressed"] = Brush("text", .16);
+        if (!primary && !Solid) {
+            var lens = new LensBrush(this); b.Background = lens;
+            b.Resources["ButtonBackgroundPointerOver"] = lens; b.Resources["ButtonBackgroundPressed"] = lens;
+        }
         AutomationProperties.SetName(b, label);
         b.Click += (_, _) => action();
         AttachMotion(b);
@@ -175,11 +178,11 @@ public sealed class Glass(Preferences preferences)
             b.StartAnimation(a);
         }
         b.PointerEntered += (_, _) => Light(.7f);
-        b.PointerPressed += (_, _) => { Scale(.98f); Light(1); };
-        b.PointerReleased += (_, _) => { Scale(1); Light(.7f); };
-        b.PointerCanceled += (_, _) => { Scale(1); Light(0); };
-        b.PointerCaptureLost += (_, _) => { Scale(1); Light(0); };
-        b.PointerExited += (_, _) => { Scale(1); Light(0); };
+        b.PointerPressed += (_, _) => { Scale(.98f); Light(1); if (b.Background is LensBrush lens) lens.Pressure(true); };
+        b.PointerReleased += (_, _) => { Scale(1); Light(.7f); if (b.Background is LensBrush lens) lens.Pressure(false); };
+        b.PointerCanceled += (_, _) => { Scale(1); Light(0); if (b.Background is LensBrush lens) lens.Pressure(false); };
+        b.PointerCaptureLost += (_, _) => { Scale(1); Light(0); if (b.Background is LensBrush lens) lens.Pressure(false); };
+        b.PointerExited += (_, _) => { Scale(1); Light(0); if (b.Background is LensBrush lens) lens.Pressure(false); };
     }
 }
 

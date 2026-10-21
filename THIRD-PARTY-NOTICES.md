@@ -5,6 +5,7 @@ The Windows distribution includes Microsoft's .NET runtime, Windows App SDK / Wi
 - [.NET runtime notices](https://github.com/dotnet/runtime/blob/main/THIRD-PARTY-NOTICES.TXT)
 - [Windows App SDK](https://github.com/microsoft/WindowsAppSDK)
 - [WinUI](https://github.com/microsoft/microsoft-ui-xaml)
+- [Win2D 1.4.0](https://github.com/microsoft/Win2D) — MIT; native Composition effect descriptions for small frosted controls. Its packaged license is preserved in the distribution.
 - [AndroidX](https://android.googlesource.com/platform/frameworks/support/)
 - [Kotlin](https://github.com/JetBrains/kotlin)
 - [NAudio 2.2.1](https://github.com/naudio/NAudio) — MIT; Windows audio playback and endpoint volume.

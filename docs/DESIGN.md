@@ -1,31 +1,35 @@
-# Veil — Synqora glass system
+# Synqora design system
 
-The source is `design/tokens.json`, exported by `tools/generate_tokens.py`. Windows uses effective pixels; Android uses dp/sp. Both share material hierarchy, semantic colors, shapes and motion timing.
+The shared source is `design/tokens.json`, exported into WinUI effective-pixel and Compose dp/sp tokens. Charcoal and pearl backgrounds, neutral text, restrained status colors and an original paired-loop mark replace the previous identity.
 
-| Material | Purpose | Behavior |
-| --- | --- | --- |
-| Subtle | Secondary cards | Quiet tint and light rim |
-| Regular | Primary controls/cards | Stronger separation |
-| Elevated | Device card/navigation/overlays | Luminous edge and restrained depth |
-| Frosted | Waveform and touch surfaces | Strong content separation |
-| SolidFallback | Accessibility/constrained rendering | Opaque theme-aware surfaces |
+## Layout and interaction
 
-Dark combines charcoal, neutral translucent grey and silver. Light combines pearl white, cool grey and graphite. Colour is reserved for restrained success/error states. Semantic text passes 4.5:1 against tested background endpoints; this does not replace composited-screen or assistive technology testing.
+Windows has a left sidebar and one centered, width-constrained workspace. It starts at 1080×820, collapses labels on smaller windows, and caps content at 900 effective pixels. Resize updates existing bounds; it does not rebuild the shell or cached pages. Each navigation button owns its selected background. There is no separate moving highlight or animated page entrance. Native title-bar controls and keyboard focus remain available.
 
-Windows uses DesktopAcrylicBackdrop where supported with Mica fallback, selected AcrylicBrush surfaces and quieter layered cards. The default shell is 940×760 with a floating horizontal navigation pill; compact widths retain accessible icon buttons. Android uses layered tint, edge reflections and restrained shadows, with content constrained on wide displays. Compose blur is not presented as arbitrary backdrop sampling. Android 10/11 use the same layered approach. Solid/economy settings remove decorative transparency and elevation. No animated full-window blur or SVG displacement shader is shipped.
+Phone screens use a compact header, direct feature rows and flat content sections. Home and Settings are the only root destinations. Feature screens have an explicit Back control. The microphone console, camera preview, native touch surface and live IME editor remain connected to application state. No Tools, Media or Send-text screen is exposed. Both platforms center camera placeholders and use finite text columns.
 
-Following the user's final rejection of slow menu motion, Windows pages and selected navigation change immediately. There is no sliding page entrance. Windows button pressure uses UIElement facade compositor springs; it does not mix those properties with raw visual transforms. Hover light fades over 140 ms. Android moves its navigation lens in graphicsLayer with a short critically damped spring; page changes use 100/80 ms fades. Its slider thumb responds to pressure while the value tracks input immediately. Reduced motion uses immediate changes. Input transmission never waits for animation. Waveform publication is capped at 30 Hz with 64 samples. Camera encoding has a dedicated executor; audio/network work uses IO. Video queues retain only the newest frame. Windows coalesces gain preference writes off the UI thread.
+Press feedback uses a restrained spring, with immediate input delivery. Hover light changes take 140 ms. Navigation changes content immediately; camera toolbar visibility uses a brief fade. Gain sliders never smooth the underlying value. Waveforms consume at most 64 sampled levels at 30 Hz. There are no decorative idle animation loops.
 
-Visual acceptance is still open. The user wants cleaner ChatGPT/Claude-like shells and actual refractive bubble optics. Current native acrylic/layered tints do not implement Apple's exact optical behavior. The final test package lowers desktop overlay/tint opacity and removes boxed feature backgrounds; it must not be described as a finished optical Liquid Glass renderer.
+## Materials
 
-Home makes the paired computer the main card and offers four direct feature controls. Windows microphone setup stays above the input monitor. Camera controls float over the preview; Windows Fit/Fill framing changes the actual virtual camera output. PC input screens show real permission state and concise instructions. Android has only Home and Settings at the root, with a real touchpad and live IME keyboard inside their feature pages. No Tools or Media tab is exposed.
+Following [Apple's adopting Liquid Glass guidance](https://developer.apple.com/documentation/technologyoverviews/adopting-liquid-glass), glass is concentrated in navigation and controls above the content. Large content areas remain quiet; nested glass cards have been removed. This guidance describes Apple-platform APIs, not a cross-platform shader or a specification for Apple's exact physics.
 
-Windows follows OS transparency, animation, high contrast and energy saver. Android follows animation settings, exposed high text contrast, battery saver and thermal pressure. Both expose reduced motion/transparency/effects quality. Native focus/disabled states and accessible icon labels are retained. Physical device and screen reader verification remain necessary.
+Windows uses a custom SystemBackdrop wrapping DesktopAcrylicController with the Thin material, theme-specific tint/luminosity, activation/policy configuration and solid fallback. Selected controls sample the native app backdrop through a small Gaussian-blur/tint Composition effect. Rounded rims, hover light and compositor press springs provide interaction. Transformed backdrop inputs are excluded: a test of that unsupported graph caused a native compositor failure. Windows does not implement nonlinear bubble refraction.
 
-References:
+In High effects mode, Android 13+ records a bounded 136-dp strip of the app-owned background/content into a GraphicsLayer, excluding floating controls. The floating navigation draws a local sample through an AGSL rounded-rectangle distance-field lens: the narrow edge band displaces the sample, adds a light rim and responds to pressure. Foreground text/icons remain sharp. This samples Synqora content only, not the launcher, other apps or arbitrary camera SurfaceViews. It does not use Compose blur as backdrop capture. There is no time-driven shader animation or full-screen animated blur.
 
-- [Kube liquid glass experiment](https://kube.io/blog/liquid-glass-css-svg/) informed luminous rims and material hierarchy; experimental browser refraction is not a native rendering API.
-- [Figma reference](https://www.figma.com/community/file/1515608601108987500/apple-liquid-glass-ios-26-control-center-ui-kit) could not be inspected in this environment. No kit assets or layouts were imported.
-- Six images supplied on 21 October informed smoked black/pearl materials, fine edges and white primary controls. The layouts, icons, typography and brand remain Synqora's own implementation; no reference imagery is bundled.
+Balanced mode uses lighter layered glass. Android 10–12, reduced transparency, economy, battery/thermal pressure and sustained CPU/GPU rendering stress use readable layered fallback materials. Windows follows transparency, animation, high contrast and energy-saver policy. Both expose motion, transparency and quality controls. Theme changes rebuild material definitions; navigation does not.
 
-No Apple logos, proprietary icons, or direct control-center copies are included.
+| Preset | Use |
+| --- | --- |
+| Subtle | Status pills and small secondary containers |
+| Regular | Sidebar and selected primary surfaces |
+| Elevated | Transient toolbars and overlays |
+| Frosted | Modal content separation |
+| SolidFallback | Accessibility and constrained rendering |
+
+## Verification and limits
+
+Native screenshots cover six screens in light/dark themes. Windows captures include 720, 1080, 1920 and 2560-pixel requested sizes, with live resize checks for horizontal bounds, exactly one selected navigation item, and retained page instances. Android captures cover portrait, smaller phones, landscape and enlarged text. A screenshot is a layout check, not proof of animation fluidity or external-device availability. Measured results and remaining acceptance work are in [VALIDATION.md](VALIDATION.md).
+
+Apple's proprietary visual assets, exact renderer and system physics are not included. The Kube CSS/SVG experiment and user-supplied reference images informed material hierarchy and clean composition; no reference images or Figma assets are bundled. The implementations and brand geometry are original.

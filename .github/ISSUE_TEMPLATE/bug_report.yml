@@ -1,0 +1,39 @@
+name: Bug report
+description: Report an app, device or performance problem
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Synqora version
+      placeholder: 0.4.0 development preview
+    validations:
+      required: true
+  - type: input
+    id: devices
+    attributes:
+      label: Windows version, Android version and phone model
+    validations:
+      required: true
+  - type: dropdown
+    id: feature
+    attributes:
+      label: Affected feature
+      options:
+        - Installation or launch
+        - Pairing or connection
+        - Microphone
+        - Webcam
+        - Touchpad
+        - Keyboard
+        - Interface or accessibility
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Reproduction steps and expected / actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Error, screenshots or measurements
+      description: Remove pairing invitations, local addresses, personal device names and other private information before posting.

@@ -2,7 +2,7 @@ param([Parameter(Mandatory=$true)][string]$Payload, [string]$Evidence = '')
 $ErrorActionPreference = 'Stop'
 $taskRoot = Split-Path -Parent $PSScriptRoot
 $payloadPath = (Resolve-Path -LiteralPath $Payload).Path
-foreach ($required in @('Synqora.exe', 'Synqora.dll', 'Synqora.pri', 'Synqora.Camera.dll', 'Synqora.CameraCheck.exe', 'Microsoft.ui.xaml.dll', 'Assets\synqora.ico', 'Assets\synqora-mark.png', 'Drivers\VBCABLE_Driver_Pack45.zip')) {
+foreach ($required in @('Synqora.exe', 'Synqora.dll', 'Synqora.pri', 'Synqora.Camera.dll', 'Synqora.CameraCheck.exe', 'Microsoft.ui.xaml.dll', 'Microsoft.Graphics.Canvas.dll', 'Microsoft.Graphics.Canvas.Interop.dll', 'Licenses\Win2D.txt', 'Assets\synqora.ico', 'Assets\synqora-mark.png', 'Drivers\VBCABLE_Driver_Pack45.zip', 'docs\INSTALLATION.md')) {
     $path = Join-Path $payloadPath $required
     if (-not (Test-Path -LiteralPath $path -PathType Leaf) -or (Get-Item -LiteralPath $path).Length -eq 0) {
         throw "Published Windows payload is incomplete: $required"

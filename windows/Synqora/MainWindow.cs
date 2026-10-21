@@ -42,7 +42,11 @@ public sealed class MainWindow : Window
     private readonly Glass g;
     private Grid root = null!, shell = null!;
     private StackPanel nav = null!;
-    private Border navSelection = null!;
+    private Grid pageHost = null!;
+    private ColumnDefinition sidebarColumn = null!;
+    private TextBlock sidebarLabel = null!;
+    private Button connectionButton = null!;
+    private readonly Dictionary<string, TextBlock> navLabels = [];
     private ScrollViewer scroll = null!;
     private readonly string[] pages = ["Overview", "Microphone", "Webcam", "Touchpad", "Keyboard", "Settings"];
     private readonly string[] glyphs = ["\uE80F", "\uE720", "\uE714", "\uE7C9", "\uE765", "\uE713"];
@@ -55,7 +59,6 @@ public sealed class MainWindow : Window
     private readonly AccessibilitySettings accessibility = new();
     private readonly string[] args;
     private bool capturing;
-    private bool compact;
     private bool lastHighContrast;
 
     public MainWindow(string[] arguments)
@@ -65,10 +68,10 @@ public sealed class MainWindow : Window
         catch (Exception error) { cameraBridgeError = error.Message; }
         session.Gain = (float)preferences.Gain / 100;
         session.Muted = preferences.Muted;
-        Title = "Synqora";
+        Title = "Synqora · 0.4 Preview";
         AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets", "synqora.ico"));
         int ArgInt(string key, int fallback) { var at = Array.IndexOf(args, key); return at >= 0 && at + 1 < args.Length && int.TryParse(args[at + 1], out var value) ? value : fallback; }
-        AppWindow.Resize(new SizeInt32(Math.Max(700, ArgInt("--width", 940)), Math.Max(600, ArgInt("--height", 760))));
+        AppWindow.Resize(new SizeInt32(Math.Max(700, ArgInt("--width", 1080)), Math.Max(600, ArgInt("--height", 820))));
         if (AppWindow.Presenter is OverlappedPresenter presenter) presenter.PreferredMinimumWidth = 700;
         ExtendsContentIntoTitleBar = true;
         AppWindow.TitleBar.ButtonBackgroundColor = Colors.Transparent;
@@ -106,8 +109,8 @@ public sealed class MainWindow : Window
         pageCache.Clear();
         lastHighContrast = g.HighContrast;
         g.Dark = preferences.Theme == "Dark" || (preferences.Theme == "System" && system.GetColorValue(UIColorType.Background).R < 128);
-        SystemBackdrop = !g.Solid && Microsoft.UI.Composition.SystemBackdrops.DesktopAcrylicController.IsSupported() ? new DesktopAcrylicBackdrop() : !g.Solid && Microsoft.UI.Composition.SystemBackdrops.MicaController.IsSupported() ? new MicaBackdrop() : null;
-        root = new Grid { Background = g.Brush("background", g.Solid ? 1 : .16), RequestedTheme = g.Dark ? ElementTheme.Dark : ElementTheme.Light };
+        SystemBackdrop = !g.Solid && Microsoft.UI.Composition.SystemBackdrops.DesktopAcrylicController.IsSupported() ? new ClearBackdrop(g) : !g.Solid && Microsoft.UI.Composition.SystemBackdrops.MicaController.IsSupported() ? new MicaBackdrop() : null;
+        root = new Grid { Background = g.Brush("background", g.Solid ? 1 : .08), RequestedTheme = g.Dark ? ElementTheme.Dark : ElementTheme.Light };
 
         root.Resources["SystemAccentColor"] = g.Color("accent");
         root.Resources["SystemControlHighlightAccentBrush"] = g.Brush("accent");
@@ -121,21 +124,24 @@ public sealed class MainWindow : Window
         root.Resources["TextOnAccentFillColorPrimaryBrush"] = g.Brush("onAccent");
         root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(48) });
         root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-        var title = Row(8, Brand.Mark(g), g.Text("Synqora", 15, "text", true));
+        var title = Row(10, Brand.Mark(g, 28), g.Text("Synqora", 14, "text", true), g.Text("Preview 0.4", 11, "muted"));
         title.Margin = new(24, 0, 150, 0); title.Background = g.Brush("background", .01);
         root.Children.Add(title); SetTitleBar(title);
         AppWindow.TitleBar.ButtonForegroundColor = g.Color("text");
-        shell = new Grid { MaxWidth = 1000, Margin = new(16, 0, 16, 16) };
-        shell.RowDefinitions.Add(new() { Height = GridLength.Auto }); shell.RowDefinitions.Add(new() { Height = new GridLength(1, GridUnitType.Star) });
+        shell = new Grid { Margin = new(12, 0, 12, 12), ColumnSpacing = 12 };
+        sidebarColumn = new ColumnDefinition { Width = new(216) }; shell.ColumnDefinitions.Add(sidebarColumn); shell.ColumnDefinitions.Add(new() { Width = new(1, GridUnitType.Star) });
         Grid.SetRow(shell, 1); root.Children.Add(shell);
-        nav = Row(4); nav.HorizontalAlignment = HorizontalAlignment.Center;
-        navSelection = new Border { Height = 46, Width = 80, CornerRadius = new(22), Background = g.Brush(g.HighContrast ? "background" : "accent", .14), BorderBrush = g.Brush("text", g.HighContrast ? 1 : .16), BorderThickness = new(1), HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Center, IsHitTestVisible = false };
-        var navLayer = new Grid(); navLayer.Children.Add(navSelection); navLayer.Children.Add(nav); BuildNav();
-        nav.Children.Add(g.IconButton("\uE8D4", "Connection details", ConnectionDetails));
-        var navigation = g.Surface(navLayer, "Elevated", 6); navigation.HorizontalAlignment = HorizontalAlignment.Center; navigation.CornerRadius = new(28); navigation.Margin = new(0, 8, 0, 16); shell.Children.Add(navigation);
-        nav.SizeChanged += (_, _) => { if (navButtons.TryGetValue(page, out var selected)) g.MoveSelection(navSelection, selected, nav, false); };
-        scroll = new ScrollViewer { HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalContentAlignment = HorizontalAlignment.Stretch, Padding = new(16, 8, 16, 24) }; Grid.SetRow(scroll, 1); shell.Children.Add(scroll);
-        root.SizeChanged += (_, e) => { var next = e.NewSize.Width < 850; if (compact != next) { compact = next; DispatcherQueue.TryEnqueue(Build); } };
+        var sidebar = new Grid(); sidebar.RowDefinitions.Add(new() { Height = GridLength.Auto }); sidebar.RowDefinitions.Add(new() { Height = new(1, GridUnitType.Star) }); sidebar.RowDefinitions.Add(new() { Height = GridLength.Auto });
+        sidebarLabel = g.Text("Workspace", 12, "muted"); sidebarLabel.Margin = new(14, 14, 0, 16); sidebar.Children.Add(sidebarLabel);
+        nav = Stack(5); nav.HorizontalAlignment = HorizontalAlignment.Stretch; Grid.SetRow(nav, 1); sidebar.Children.Add(nav); BuildNav();
+        connectionButton = g.Button("Connect phone", ConnectionDetails, glyph: "\uE8F2"); connectionButton.HorizontalAlignment = HorizontalAlignment.Stretch; connectionButton.HorizontalContentAlignment = HorizontalAlignment.Left;
+        var footer = Stack(12, connectionButton); footer.Margin = new(0, 20, 0, 4); Grid.SetRow(footer, 2); sidebar.Children.Add(footer);
+        var navigation = g.Surface(sidebar, "Regular", 8); navigation.CornerRadius = new(20); shell.Children.Add(navigation);
+        scroll = new ScrollViewer { HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, HorizontalScrollMode = ScrollMode.Disabled, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalContentAlignment = HorizontalAlignment.Stretch };
+        pageHost = new Grid { HorizontalAlignment = HorizontalAlignment.Left, Margin = new(32, 28, 32, 36) }; scroll.Content = pageHost;
+        var workspace = new Border { Background = g.Brush("background", g.Solid ? 1 : .2), CornerRadius = new(20), Child = scroll, BorderBrush = g.Brush("text", .04), BorderThickness = new(1) }; Grid.SetColumn(workspace, 1); shell.Children.Add(workspace);
+        scroll.SizeChanged += (_, _) => SizeWorkspace();
+        root.SizeChanged += (_, e) => { SizeSidebar(e.NewSize.Width); SizeWorkspace(); };
         Content = root; RenderPage(false);
         root.Loaded += async (_, _) => {
             if (capturing) return;
@@ -147,20 +153,38 @@ public sealed class MainWindow : Window
     {
         nav.Children.Clear();
         navButtons.Clear();
+        navLabels.Clear();
         for (int i = 0; i < pages.Length; i++)
         {
             var dest = pages[i]; var selected = dest == page;
-            var b = g.Button(dest == "Overview" ? "Home" : dest, () => Navigate(dest), glyph: glyphs[i]);
-            b.HorizontalAlignment = HorizontalAlignment.Left; b.HorizontalContentAlignment = HorizontalAlignment.Center; b.MinWidth = compact ? 52 : 104; b.Padding = new(compact ? 12 : 14, 12, compact ? 12 : 14, 12);
-            if (compact) { var icon = g.Icon(glyphs[i]); icon.HorizontalAlignment = HorizontalAlignment.Center; b.Content = icon; b.HorizontalContentAlignment = HorizontalAlignment.Center; ToolTipService.SetToolTip(b, dest); }
-            b.Background = g.Brush("surface", 0);
-            b.BorderBrush = g.Brush("border", 0); b.CornerRadius = new(22);
+            var b = g.Button(dest == "Overview" ? "Overview" : dest, () => Navigate(dest));
+            var label = g.Text(dest, 14); navLabels[dest] = label; b.Content = Row(12, g.Icon(glyphs[i], 19, "text"), label);
+            b.HorizontalAlignment = HorizontalAlignment.Stretch; b.HorizontalContentAlignment = HorizontalAlignment.Left; b.MinWidth = 0; b.Padding = new(14, 12, 14, 12);
+            b.Background = g.Brush("text", selected ? .09 : 0); b.BorderThickness = new(0); b.CornerRadius = new(12);
+            b.Resources["ButtonBackgroundPointerOver"] = g.Brush("text", .06); b.Resources["ButtonBackgroundPressed"] = g.Brush("text", .1); ToolTipService.SetToolTip(b, dest);
             AutomationProperties.SetAutomationId(b, "nav-" + dest);
             AutomationProperties.SetItemStatus(b, selected ? "Current page" : "");
             b.AccessKey = (i + 1).ToString();
             navButtons[dest] = b;
             nav.Children.Add(b);
         }
+    }
+    private void SizeSidebar(double width)
+    {
+        var next = width < 940; sidebarColumn.Width = new(next ? 72 : 216);
+        sidebarLabel.Visibility = next ? Visibility.Collapsed : Visibility.Visible;
+        foreach (var label in navLabels.Values) label.Visibility = next ? Visibility.Collapsed : Visibility.Visible;
+        connectionButton.Content = next ? g.Icon("\uE8F2", 19) : Row(12, g.Icon("\uE8F2", 19), g.Text("Connect phone", 14));
+        connectionButton.Padding = new(next ? 14 : 18, 11, next ? 14 : 18, 11);
+    }
+    private void SizeWorkspace()
+    {
+        if (scroll == null || pageHost == null) return;
+        var inset = scroll.ActualWidth < 620 ? 22 : 36;
+        pageHost.Margin = new(inset, 28, inset, 36);
+        var available = Math.Max(0, scroll.ActualWidth - inset * 2 - 2);
+        pageHost.Width = available;
+        if (pageHost.Children.FirstOrDefault() is FrameworkElement content) content.Width = Math.Min(900, available);
     }
     private void Navigate(string dest)
     {
@@ -172,8 +196,8 @@ public sealed class MainWindow : Window
         {
             var selected = name == dest;
             AutomationProperties.SetItemStatus(button, selected ? "Current page" : "");
+            button.Background = g.Brush("text", selected ? .09 : 0);
         }
-        if (navButtons.TryGetValue(dest, out var selectedButton)) g.MoveSelection(navSelection, selectedButton, nav, false);
         RenderPage(false);
     }
     private void RenderPage(bool animate = false)
@@ -183,14 +207,14 @@ public sealed class MainWindow : Window
             content = page switch { "Overview" => Dashboard(), "Microphone" => Microphone(), "Webcam" => Webcam(), "Touchpad" => Touchpad(), "Keyboard" => Keyboard(), _ => Settings() };
             pageCache[page] = content;
         }
-        content.MaxWidth = 900; content.HorizontalAlignment = HorizontalAlignment.Stretch;
-        scroll.Content = content;
+        content.MaxWidth = double.PositiveInfinity; content.HorizontalAlignment = HorizontalAlignment.Center;
+        pageHost.Children.Clear(); pageHost.Children.Add(content); SizeWorkspace();
         audioView?.SetStreaming(page == "Microphone" && session.Server.State.Microphone);
         var destination = page;
         DispatcherQueue.TryEnqueue(() => { if (page == destination) scroll.ChangeView(null, scrollPositions.GetValueOrDefault(destination), null, true); });
         if (animate) g.Enter(content);
     }
-    private StackPanel Heading(string eyebrow, string title, string subtitle) => Stack(6, g.Display(title, compact ? 28 : 32), g.Text(subtitle, 14, "muted"));
+    private StackPanel Heading(string eyebrow, string title, string subtitle) => Stack(8, g.Display(title, 28), g.Text(subtitle, 14, "muted"));
     private async void ConnectionDetails()
     {
         try { session.Start(); }
@@ -255,45 +279,41 @@ public sealed class MainWindow : Window
     }
     private StackPanel Dashboard()
     {
-        var details = Stack(6, g.Text("THIS COMPUTER", 10, "muted", true), g.Display(Environment.MachineName, 27), Live(() => session.CanStream ? $"Connected to {session.Device.Name}" : "Ready for your phone", 14, "muted"));
-        var device = new Grid { ColumnSpacing = 20 };
-        device.ColumnDefinitions.Add(new() { Width = GridLength.Auto }); device.ColumnDefinitions.Add(new() { Width = new(1, GridUnitType.Star) }); device.ColumnDefinitions.Add(new() { Width = GridLength.Auto });
-        var deviceIcon = g.Surface(g.Icon("\uE7F4", 30), "Elevated", 16); deviceIcon.VerticalAlignment = VerticalAlignment.Center; deviceIcon.Height = deviceIcon.Width = 66; device.Children.Add(deviceIcon); Grid.SetColumn(details, 1); device.Children.Add(details);
-        var connect = LiveButton(() => session.CanStream ? "Device details" : "Connect phone", ConnectionDetails, true); Grid.SetColumn(connect, 2); device.Children.Add(connect);
-        var connection = g.Surface(Stack(12, device, Row(16, LiveStatus(() => session.CanStream ? "Connected" : "Not connected"), Live(() => session.CanStream ? $"Encrypted · {session.Device.LatencyMs?.ToString("0") ?? "—"} ms" : "Scan the code on this PC to pair", 12, "muted"))), "Regular", 20);
-        var features = new Grid { ColumnSpacing = 12, RowSpacing = 12 };
-        for (int c = 0; c < 2; c++) features.ColumnDefinitions.Add(new() { Width = new(1, GridUnitType.Star) });
-        for (int r = 0; r < 2; r++) features.RowDefinitions.Add(new() { Height = GridLength.Auto });
+        var details = Stack(6, g.Text("This computer", 12, "muted"), g.Display(args.Contains("--capture") ? "Windows PC" : Environment.MachineName, 28), Live(() => session.CanStream ? $"Connected to {session.Device.Name}" : "No phone connected", 14, "muted"));
+        var connect = LiveButton(() => session.CanStream ? "Device details" : "Connect phone", ConnectionDetails, true);
+        var connection = g.Between(g.Leading(g.Icon("\uE7F4", 30, "text"), details), connect);
+        var features = Stack(0);
         string[] names = ["Microphone", "Webcam", "Touchpad", "Keyboard"];
-        string[] descriptions = ["Phone audio in your apps", "Your phone as a webcam", "Move, tap and scroll", "Type directly on this PC"];
+        string[] descriptions = ["Use your phone's microphone in calls and recordings", "Bring your phone camera to your PC", "Move, click and scroll from your phone", "Type and use shortcuts in your PC apps"];
         for (int i = 0; i < names.Length; i++) {
             var name = names[i]; var tile = g.Button(name, () => Navigate(name));
-            var symbol = g.Surface(g.Icon(glyphs[i + 1], 23), "Elevated", 12); symbol.CornerRadius = new(18);
+            var symbol = g.Icon(glyphs[i + 1], 22, "text");
             var text = Stack(4, g.Text(name, 17, "text", true), g.Text(descriptions[i], 12, "muted"));
-            var tileContent = new Grid { ColumnSpacing = 14 }; tileContent.ColumnDefinitions.Add(new() { Width = GridLength.Auto }); tileContent.ColumnDefinitions.Add(new() { Width = new(1, GridUnitType.Star) }); tileContent.ColumnDefinitions.Add(new() { Width = GridLength.Auto });
+            var tileContent = new Grid { ColumnSpacing = 20 }; tileContent.ColumnDefinitions.Add(new() { Width = new(32) }); tileContent.ColumnDefinitions.Add(new() { Width = new(1, GridUnitType.Star) }); tileContent.ColumnDefinitions.Add(new() { Width = GridLength.Auto });
             tileContent.Children.Add(symbol); Grid.SetColumn(text, 1); tileContent.Children.Add(text); var arrow = g.Icon("\uE76C", 12, "muted"); Grid.SetColumn(arrow, 2); tileContent.Children.Add(arrow); tile.Content = tileContent;
             tile.HorizontalContentAlignment = HorizontalAlignment.Stretch; tile.HorizontalAlignment = HorizontalAlignment.Stretch;
-            tile.Padding = new(16); tile.MinHeight = 84; tile.CornerRadius = new(18); tile.Background = g.Brush("surface", g.Solid ? 1 : 0); tile.BorderThickness = new(0);
-            Grid.SetColumn(tile, i % 2); Grid.SetRow(tile, i / 2); features.Children.Add(tile);
+            tile.Padding = new(16, 18, 16, 18); tile.MinHeight = 84; tile.CornerRadius = new(12); tile.Background = g.Brush("surface", 0); tile.BorderThickness = new(0);
+            features.Children.Add(tile); if (i < 3) features.Children.Add(g.Rule());
         }
-        return Stack(22, Heading("", "Home", "A little closer to your phone."), connection, g.Text("Your controls", 16, "text", true), features,
-            Row(8, g.Icon("\uE72E", 14, "muted"), Live(() => session.Server.State.Microphone || session.Server.State.Camera ? $"{(session.Server.State.Microphone ? "Microphone active" : "")}{(session.Server.State.Microphone && session.Server.State.Camera ? " · " : "")}{(session.Server.State.Camera ? "Camera active" : "")}" : "Your microphone and camera are off.", 12, "muted")));
+        return Stack(28, Heading("", "Your workspace", "One connection for your phone and computer."), g.Section(connection, 16), g.Rule(), features,
+            Row(8, g.Icon("\uE72E", 13, "muted"), Live(() => session.CanStream ? $"Encrypted local connection · {session.Device.LatencyMs?.ToString("0") ?? "—"} ms" : "Pair a phone to get started. Your camera and microphone are off.", 12, "muted")));
     }
 
     private StackPanel Microphone()
     {
-        var waveform = new GlassAudioVisualizer(g) { Height = 72 }; audioView = waveform;
+        var waveform = new GlassAudioVisualizer(g) { Height = 110 }; audioView = waveform;
         waveform.Loaded += (_, _) => waveform.SetStreaming(session.Server.State.Microphone);
         var level = g.Text($"{preferences.Gain:0}%", 14, "accent", true);
         var gain = g.Slider("Input gain", preferences.Gain, v => { preferences.Gain = v; session.Gain = (float)v / 100; level.Text = $"{v:0}%"; preferences.SaveSoon(); });
         var mute = g.Button(preferences.Muted ? "Unmute" : "Mute", () => { preferences.Muted = !preferences.Muted; session.Muted = preferences.Muted; preferences.Save(); pageCache.Remove("Microphone"); RenderPage(false); }, true, preferences.Muted ? "\uE198" : "\uE720");
-        var console = g.Surface(Stack(18, Row(12, g.Icon("\uE720", 20), g.Text("Input monitor", 16, "text", true), LiveStatus(() => session.Server.State.Microphone ? "Live" : "Off")), waveform, Row(16, mute, Live(() => preferences.Muted ? "Microphone muted" : session.Server.State.Microphone ? "Receiving phone audio" : "Start the microphone on your phone", 13, "muted")), gain, level), "Regular");
+        var console = g.Section(Stack(24, g.Between(g.Text("Input level", 15, "text", true), LiveStatus(() => session.Server.State.Microphone ? "Live" : "Off")), waveform,
+            g.Between(Live(() => preferences.Muted ? "Microphone muted" : session.Server.State.Microphone ? "Receiving phone audio" : "Start the microphone on your phone", 14, "muted"), mute), g.Rule(), gain, level));
         var outputHeader = new Grid { ColumnSpacing = 16 }; outputHeader.ColumnDefinitions.Add(new() { Width = new(1, GridUnitType.Star) }); outputHeader.ColumnDefinitions.Add(new() { Width = GridLength.Auto });
         outputHeader.Children.Add(Stack(8, Row(10, g.Icon("\uE720", 18), g.Text("Windows microphone", 17, "text", true)), Live(() => session.MicrophoneOutput.CaptureEndpoint, 13, "muted")));
         var outputActions = Row(10, LiveButton(() => session.MicrophoneOutput.Routing ? "Stop sharing" : "Share with apps", ToggleMicrophoneOutput, true), g.Button("Setup", MicrophoneSetupDetails)); Grid.SetColumn(outputActions, 1); outputHeader.Children.Add(outputActions);
-        var output = g.Surface(Stack(14, outputHeader, Live(() => session.MicrophoneOutput.Error ?? (session.MicrophoneOutput.Routing ? "Select the recording device above in Meet or your audio app." : "A recording device is required for Meet and other apps."), 12, "muted")), "Subtle", 20);
-        return Stack(20, Heading("", "Microphone", "Your voice, in focus."), output, console,
-            g.Card(Stack(12, g.Switch("Monitor on speakers", session.Monitoring, v => { try { session.Monitor(v); } catch (Exception e) { _ = g.Dialog(root.XamlRoot, "Audio output unavailable", g.Text(e.Message)); } }), g.Text("Hear a local preview. This does not create a recording device.", 12, "muted"))),
+        var output = g.Section(Stack(14, outputHeader, Live(() => session.MicrophoneOutput.Error ?? (session.MicrophoneOutput.Routing ? "Select the recording device above in Meet or your audio app." : "Set up a recording device to use phone audio in Meet and other apps."), 12, "muted")));
+        return Stack(26, Heading("", "Microphone", "Phone audio, ready for your PC apps."), console, g.Rule(), output, g.Rule(),
+            g.Section(Stack(10, g.Switch("Monitor on speakers", session.Monitoring, v => { try { session.Monitor(v); } catch (Exception e) { _ = g.Dialog(root.XamlRoot, "Audio output unavailable", g.Text(e.Message)); } }), g.Text("Hear a local preview. This does not create a recording device.", 12, "muted"))),
             Row(24, g.Text("48 kHz · 16-bit · mono", 12, "muted"), Live(() => $"{session.Server.AudioBytes / 1024} KB received · {session.Device.LatencyMs?.ToString("0") ?? "—"} ms", 12, "muted")));
     }
     private async void ToggleMicrophoneOutput()
@@ -315,20 +335,24 @@ public sealed class MainWindow : Window
     private StackPanel Metric(string label, string value) => Stack(8, g.Text(label, 10, "muted", true), g.Text(value, 21, "text", true));
     private StackPanel Webcam()
     {
-        var view = new Grid { Height = compact ? 270 : 330, Background = g.Brush("background"), CornerRadius = new(24) };
+        var view = new Grid { Height = 350, Background = g.Brush("background", .65), CornerRadius = new(16) };
+        view.SizeChanged += (_, e) => { var height = Math.Clamp(e.NewSize.Width * .5625, 250, 480); if (Math.Abs(view.Height - height) > 1) view.Height = height; };
         Glass.RoundClip(view, 20);
-        var center = Stack(14, g.Icon("\uE714", 36), g.Text("Your phone, in full view.", 23, "text", true), g.Text("Start the camera on your phone.", 14, "muted")); center.HorizontalAlignment = HorizontalAlignment.Center; center.VerticalAlignment = VerticalAlignment.Center;
+        var cameraGlyph = g.Icon("\uE714", 36); cameraGlyph.HorizontalAlignment = HorizontalAlignment.Center;
+        var emptyTitle = g.Text("Camera is off", 20, "text", true); emptyTitle.TextAlignment = TextAlignment.Center;
+        var emptyHint = g.Text("Start the camera on your phone.", 14, "muted"); emptyHint.TextAlignment = TextAlignment.Center;
+        var center = Stack(12, cameraGlyph, emptyTitle, emptyHint); center.HorizontalAlignment = HorizontalAlignment.Center; center.VerticalAlignment = VerticalAlignment.Center; center.Margin = new(24, 64, 24, 64);
         view.Children.Add(center);
         cameraImage = new Image { Stretch = preferences.CameraFill ? Stretch.UniformToFill : Stretch.Uniform }; view.Children.Add(cameraImage);
         var image = cameraImage; image.Unloaded += (_, _) => image.Source = null;
         liveBindings.Add(() => center.Visibility = session.Server.State.Camera ? Visibility.Collapsed : Visibility.Visible);
         var label = LiveStatus(() => session.Server.State.Camera ? "Live camera" : "Camera off"); label.Margin = new(16); label.VerticalAlignment = VerticalAlignment.Top; view.Children.Add(label);
-        var tools = g.Surface(Row(12, g.IconButton("\uE713", "Camera settings", CameraSettings), Live(() => session.Server.State.Camera ? $"{videoDimensions} · {decodedFps:0} fps" : "Waiting for your phone", 12, "muted")), "Elevated", 6);
-        tools.Margin = new(16); tools.HorizontalAlignment = HorizontalAlignment.Center; tools.VerticalAlignment = VerticalAlignment.Bottom; tools.CornerRadius = new(30); view.Children.Add(tools);
+        var settings = g.IconButton("\uE713", "Camera settings", CameraSettings); settings.Margin = new(12); settings.HorizontalAlignment = HorizontalAlignment.Right; settings.VerticalAlignment = VerticalAlignment.Top; view.Children.Add(settings);
+        var metrics = Live(() => session.Server.State.Camera ? $"{videoDimensions} · {decodedFps:0} fps" : "", 12, "muted"); metrics.Margin = new(20); metrics.VerticalAlignment = VerticalAlignment.Bottom; view.Children.Add(metrics);
         var publish = g.Button(cameraPublishing ? "Starting camera…" : cameraBridge?.Published == true ? "Stop sharing camera" : "Share with Windows apps", TogglePublishedCamera, true, "\uE714");
         publish.IsEnabled = !cameraPublishing;
-        return Stack(20, Heading("", "Webcam", "A clear view from your phone."), g.Surface(view, "Regular", 6),
-            g.Card(Stack(14, Row(16, publish, LiveStatus(() => cameraBridge?.Published == true ? "Available to apps" : "Preview only")),
+        return Stack(24, Heading("", "Webcam", "A clear view from your phone."), view,
+            g.Section(Stack(14, g.Between(Stack(6, g.Text("Windows camera", 16, "text", true), Live(() => cameraBridge?.Published == true ? "Available to apps" : "Preview only", 13, "muted")), publish),
                 g.Text(cameraBridge?.Published == true ? "Select Synqora Camera in Meet or your camera app." : "Sharing starts automatically with your phone camera. Windows 11 and the latest Synqora installation are required.", 13, "muted"), Live(() => cameraBridgeError, 12, "danger"))));
     }
     private async void TogglePublishedCamera() => await PublishCamera(false);
@@ -350,26 +374,28 @@ public sealed class MainWindow : Window
         g.Text("Start or stop the camera and choose video quality on your phone.", 14), Live(() => session.Server.State.Camera ? $"Receiving {videoDimensions} over encrypted MJPEG." : "Your phone camera is off.", 13, "muted")));
     private StackPanel Touchpad()
     {
-        return Stack(24, Heading("", "Touchpad", "A natural extension of your PC."), g.Surface(Stack(20,
-            Row(16, g.Surface(g.Icon("\uE7C9", 28), "Elevated", 16), Stack(6, g.Text("Control from your phone", 22, "text", true), Live(() => session.CanStream ? session.Device.Name : "Connect a phone to begin", 14, "muted"))),
-            ControlSwitch(), LiveStatus(() => session.CanStream && session.Server.State.ControlsAllowed ? "Ready for gestures" : "Phone controls paused")), "Regular"),
-            g.Card(Stack(18, g.Text("On your phone", 17, "text", true), Guide("One finger", "Move the pointer"), Guide("Two fingers", "Scroll the page"), Guide("Tap", "Click the focused item"))), g.Button("Connection details", ConnectionDetails, glyph: "\uE8F2"));
+        return Stack(28, Heading("", "Touchpad", "Control this PC from your phone."),
+            g.Leading(g.Icon("\uE7C9", 36), Stack(8, g.Text("Ready for your gestures", 20, "text", true), Live(() => session.CanStream ? session.Device.Name : "Connect a phone to begin", 14, "muted"))),
+            ControlSwitch(), g.Rule(), Guide("One finger", "Move the pointer"), Guide("Two fingers", "Scroll the page"), Guide("Tap", "Click the focused item"), g.Rule(),
+            LiveStatus(() => session.CanStream && session.Server.State.ControlsAllowed ? "Ready for gestures" : "Phone controls paused"), g.Button("Connection details", ConnectionDetails, glyph: "\uE8F2"));
     }
     private StackPanel Keyboard()
     {
-        return Stack(24, Heading("", "Keyboard", "Your words, on the bigger screen."), g.Surface(Stack(20, Row(16, g.Surface(g.Icon("\uE765", 28), "Elevated", 16), Stack(6, g.Text("Live typing", 22, "text", true), Live(() => session.CanStream ? session.Device.Name : "Connect a phone to begin", 14, "muted"))), ControlSwitch(), LiveStatus(() => session.CanStream && session.Server.State.ControlsAllowed ? "Ready to receive input" : "Phone controls paused")), "Regular"),
-            g.Card(Stack(18, g.Text("Ready when you are", 17, "text", true), Guide("1", "Focus a text field in any PC app"), Guide("2", "Open Keyboard on your phone"), Guide("3", "Type, edit and use shortcuts live"))), g.Button("Connection details", ConnectionDetails));
+        return Stack(28, Heading("", "Keyboard", "Live typing from your phone."),
+            g.Leading(g.Icon("\uE765", 36), Stack(8, g.Text("Every keystroke, directly", 20, "text", true), Live(() => session.CanStream ? session.Device.Name : "Connect a phone to begin", 14, "muted"))),
+            ControlSwitch(), g.Rule(), Guide("01", "Focus a text field in any PC app"), Guide("02", "Open Keyboard on your phone"), Guide("03", "Type, edit and use shortcuts live"), g.Rule(),
+            LiveStatus(() => session.CanStream && session.Server.State.ControlsAllowed ? "Ready to receive input" : "Phone controls paused"), g.Button("Connection details", ConnectionDetails));
     }
 
-    private StackPanel Guide(string label, string description) => Row(20, g.Text(label, 14, "text", true), g.Text(description, 14, "muted"));
+    private Grid Guide(string label, string description) { var lead = g.Text(label, 14, "text", true); lead.Width = 96; return g.Leading(lead, g.Text(description, 14, "muted")); }
 
     private StackPanel Settings()
     {
         return Stack(24, Heading("Make it yours", "Settings", "Appearance, comfort, and connection."),
-            g.Card(Stack(20, Row(12, g.Icon("\uE790"), g.Text("Appearance", 20, "text", true)), g.Dropdown("Color theme", ["System", "Light", "Dark"], preferences.Theme, v => { preferences.Theme = v; preferences.Save(); Build(); }), g.Dropdown("Visual effects quality", ["Balanced", "Economy", "High"], preferences.Effects, v => { preferences.Effects = v; preferences.Save(); Build(); }), g.Text("Economy uses solid surfaces. High keeps richer materials where the system permits.", 13, "muted"))),
-            g.Card(Stack(20, Row(12, g.Icon("\uE776"), g.Text("Comfort & accessibility", 20, "text", true)), g.Switch("Reduce motion", preferences.ReducedMotion, v => { preferences.ReducedMotion = v; preferences.Save(); }), g.Switch("Reduce transparency", preferences.ReducedTransparency, v => { preferences.ReducedTransparency = v; preferences.Save(); Build(); }), g.Text("Windows animation, transparency, and high contrast preferences take priority automatically.", 13, "muted"))),
-            g.Card(Stack(16, g.Text("Connection & privacy", 20, "text", true), Live(() => session.CanStream ? $"Encrypted local connection to {session.Device.Name}." : "No phone connected. Your microphone and camera are off.", 14, "muted"), ControlSwitch(), g.Button("Device details", ConnectionDetails))),
-            g.Text("Synqora 0.3.0", 11, "muted"));
+            g.Section(Stack(20, g.Text("Appearance", 17, "text", true), g.Dropdown("Color theme", ["System", "Light", "Dark"], preferences.Theme, v => { preferences.Theme = v; preferences.Save(); Build(); }), g.Dropdown("Visual effects quality", ["Balanced", "Economy", "High"], preferences.Effects, v => { preferences.Effects = v; preferences.Save(); Build(); }))), g.Rule(),
+            g.Section(Stack(20, g.Text("Comfort & accessibility", 17, "text", true), g.Switch("Reduce motion", preferences.ReducedMotion, v => { preferences.ReducedMotion = v; preferences.Save(); }), g.Switch("Reduce transparency", preferences.ReducedTransparency, v => { preferences.ReducedTransparency = v; preferences.Save(); Build(); }), g.Text("Windows animation, transparency, and high contrast preferences apply automatically.", 13, "muted"))), g.Rule(),
+            g.Section(Stack(16, g.Text("Connection & privacy", 17, "text", true), Live(() => session.CanStream ? $"Encrypted local connection to {session.Device.Name}." : "No phone connected. Your microphone and camera are off.", 14, "muted"), ControlSwitch(), g.Button("Device details", ConnectionDetails))),
+            g.Text("Synqora 0.4.0 preview", 12, "muted"));
     }
     private async Task CapturePreviews()
     {
@@ -377,12 +403,14 @@ public sealed class MainWindow : Window
         var directory = index >= 0 && args.Length > index + 1 ? args[index + 1] : Path.Combine(AppContext.BaseDirectory, "captures");
         Directory.CreateDirectory(directory);
         var originalTheme = preferences.Theme;
+        var audits = new List<object>();
         foreach (var theme in new[] { "Dark", "Light" })
         {
             preferences.Theme = theme; Build(); await Task.Delay(300);
             foreach (var destination in pages)
             {
                 Navigate(destination); await Task.Delay(450);
+                AuditLayout(audits, theme, destination);
                 var bitmap = new RenderTargetBitmap(); await bitmap.RenderAsync(root);
                 var pixels = await bitmap.GetPixelsAsync();
                 var folder = await StorageFolder.GetFolderFromPathAsync(Path.GetFullPath(directory));
@@ -392,6 +420,17 @@ public sealed class MainWindow : Window
                 encoder.SetPixelData(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Premultiplied, (uint)bitmap.PixelWidth, (uint)bitmap.PixelHeight, 96, 96, pixels.ToArray()); await encoder.FlushAsync();
             }
         }
+        if (args.Contains("--resize-test")) {
+            var originalSize = AppWindow.Size; var originalRoot = root;
+            var retained = pageCache.ToDictionary(x => x.Key, x => x.Value);
+            foreach (var size in new[] { new SizeInt32(720, 650), new SizeInt32(1920, 1080), new SizeInt32(1080, 820), new SizeInt32(2560, 1440) }) {
+                AppWindow.Resize(size); await Task.Delay(160);
+                foreach (var destination in pages) { Navigate(destination); await Task.Delay(60); AuditLayout(audits, "live-resize", destination); }
+                if (!ReferenceEquals(root, originalRoot) || retained.Any(x => !ReferenceEquals(pageCache[x.Key], x.Value))) throw new InvalidOperationException("Resize rebuilt cached UI.");
+            }
+            AppWindow.Resize(originalSize);
+        }
+        File.WriteAllText(Path.Combine(directory, "windows-layout-audit.json"), JsonSerializer.Serialize(audits, new JsonSerializerOptions { WriteIndented = true }));
         if (!args.Contains("--no-measure"))
         {
         var samples = new List<double>(); var watch = Stopwatch.StartNew(); double previous = -1;
@@ -405,6 +444,26 @@ public sealed class MainWindow : Window
         preferences.Theme = originalTheme; Build();
         File.WriteAllText(Path.Combine(directory, "capture.complete"), "Native WinUI captures complete.");
         if (args.Contains("--exit")) Close();
+    }
+    private void AuditLayout(List<object> evidence, string scenario, string destination)
+    {
+        var violations = new List<string>(); var visited = 0;
+        void Visit(DependencyObject node) {
+            if (node is FrameworkElement element && element.Visibility == Visibility.Visible && element.ActualWidth > 0) {
+                var p = element.TransformToVisual(pageHost).TransformPoint(new(0, 0));
+                // Ignore internal templates whose adorners deliberately overhang controls.
+                if (element is TextBlock or Button or StackPanel or Grid) {
+                    visited++;
+                    if (p.X < -1 || p.X + element.ActualWidth > pageHost.ActualWidth + 1) violations.Add($"{element.GetType().Name} {p.X:0.0}..{p.X + element.ActualWidth:0.0} / {pageHost.ActualWidth:0.0}");
+                }
+            }
+            if (node is Button || node is Slider || node is ComboBox || node is ToggleSwitch) return;
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(node); i++) Visit(VisualTreeHelper.GetChild(node, i));
+        }
+        Visit(pageHost);
+        var selected = navButtons.Count(x => AutomationProperties.GetItemStatus(x.Value) == "Current page");
+        evidence.Add(new { scenario, destination, width = root.ActualWidth, viewport = pageHost.ActualWidth, visited, selected, violations });
+        if (violations.Count > 0 || selected != 1) throw new InvalidOperationException($"Layout audit failed at {root.ActualWidth}px {destination}: " + string.Join(", ", violations));
     }
     private async Task SaveScreen(string path)
     {

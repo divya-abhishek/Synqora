@@ -53,11 +53,19 @@ class StreamingFrameTest {
         fun select(label: String) {
             // Setup controls may be inside a scrolling page. Use their platform accessibility
             // action; measured bottom-navigation taps below still inject actual touch events.
-            var node = find(label, visibleOnly = false)
-            node.performAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_SHOW_ON_SCREEN.id)
-            while (!node.isClickable && node.parent != null) node = node.parent
-            check(node.performAction(AccessibilityNodeInfo.ACTION_CLICK)) { "Control could not be activated: $label" }
-            Thread.sleep(600)
+            val deadline = SystemClock.uptimeMillis() + 10000
+            while (SystemClock.uptimeMillis() < deadline) {
+                var node = find(label, visibleOnly = false)
+                node.performAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_SHOW_ON_SCREEN.id)
+                while (!node.isClickable && node.parent != null) node = node.parent
+                if (node.isClickable && node.isEnabled) {
+                    check(node.performAction(AccessibilityNodeInfo.ACTION_CLICK)) { "Control could not be activated: $label" }
+                    Thread.sleep(600); return
+                }
+                // Text edits and the enabled state are published on a later UI frame.
+                Thread.sleep(100)
+            }
+            error("Control did not become enabled: $label")
         }
         ActivityScenario.launch(MainActivity::class.java).use {
             tap("Connection details", description = true)

@@ -35,13 +35,13 @@ public static class Tokens
         ["ambience"] = "#D6DCDC",
     };
     public const int MotionPress = 120;
-    public const int MotionHover = 160;
-    public const int MotionSelect = 220;
-    public const int MotionNavigation = 280;
-    public const int MotionPanel = 320;
-    public const int MotionModal = 360;
+    public const int MotionHover = 140;
+    public const int MotionSelect = 100;
+    public const int MotionNavigation = 100;
+    public const int MotionPanel = 220;
+    public const int MotionModal = 260;
     public const int RadiusSmall = 12;
-    public const int RadiusButton = 14;
+    public const int RadiusButton = 24;
     public const int RadiusCard = 20;
     public const int RadiusPanel = 24;
     public const int RadiusModal = 28;

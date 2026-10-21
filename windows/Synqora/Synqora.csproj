@@ -13,7 +13,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\synqora.ico</ApplicationIcon>
-    <Version>0.3.0</Version>
+    <Version>0.4.0</Version>
     <Company>Synqora</Company>
     <Product>Synqora</Product>
     <Description>Synqora encrypted phone audio, camera and remote controls</Description>
@@ -22,19 +22,28 @@
     <ProjectReference Include="..\..\core\Synqora.Core.csproj" />
     <PackageReference Include="NAudio" Version="2.2.1" />
     <PackageReference Include="QRCoder" Version="1.6.0" />
+    <PackageReference Include="Microsoft.Graphics.Win2D" Version="1.4.0" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.260921001" />
     <Content Include="Assets\**" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\docs\licenses\Win2D.txt" Link="Licenses\Win2D.txt" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\..\native\camera\build\Synqora.Camera.dll" Link="Synqora.Camera.dll" CopyToOutputDirectory="PreserveNewest" Condition="Exists('..\..\native\camera\build\Synqora.Camera.dll')" />
     <Content Include="..\..\native\camera\build\CameraDeviceProbe.exe" Link="Synqora.CameraCheck.exe" CopyToOutputDirectory="PreserveNewest" Condition="Exists('..\..\native\camera\build\CameraDeviceProbe.exe')" />
   </ItemGroup>
   <!-- This C#-only unpackaged application still needs the merged WinUI resource
        index. Explicitly generate and publish it; a successful .NET publish alone
        previously omitted it even though the build output ran correctly. -->
-  <Target Name="PublishSynqoraResourceIndex" AfterTargets="ComputeResolvedFilesToPublishList" DependsOnTargets="_GenerateProjectPriFile">
-    <Error Condition="!Exists('$(ProjectPriFullPath)')" Text="The Synqora WinUI resource index was not generated: $(ProjectPriFullPath)" />
+  <PropertyGroup>
+    <SynqoraGeneratePriForPublish Condition="'$(NoBuild)' != 'true'">_GenerateProjectPriFile</SynqoraGeneratePriForPublish>
+  </PropertyGroup>
+  <Target Name="PublishSynqoraResourceIndex" AfterTargets="ComputeResolvedFilesToPublishList" DependsOnTargets="$(SynqoraGeneratePriForPublish)">
+    <PropertyGroup>
+      <SynqoraPriToPublish Condition="'$(NoBuild)' == 'true'">$(TargetDir)$(AssemblyName).pri</SynqoraPriToPublish>
+      <SynqoraPriToPublish Condition="'$(NoBuild)' != 'true'">$(ProjectPriFullPath)</SynqoraPriToPublish>
+    </PropertyGroup>
+    <Error Condition="!Exists('$(SynqoraPriToPublish)')" Text="The Synqora WinUI resource index was not generated: $(SynqoraPriToPublish)" />
     <ItemGroup>
-      <ResolvedFileToPublish Remove="$(ProjectPriFullPath)" />
-      <ResolvedFileToPublish Include="$(ProjectPriFullPath)" RelativePath="$(ProjectPriFileName)" CopyToPublishDirectory="Always" />
+      <ResolvedFileToPublish Remove="$(SynqoraPriToPublish)" />
+      <ResolvedFileToPublish Include="$(SynqoraPriToPublish)" RelativePath="$(AssemblyName).pri" CopyToPublishDirectory="Always" />
     </ItemGroup>
   </Target>
 </Project>

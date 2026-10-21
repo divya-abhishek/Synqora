@@ -33,8 +33,8 @@ def launch(screen, theme, *extra):
         adb('shell', 'uiautomator', 'dump', '/sdcard/synqora-capture.xml')
         hierarchy = adb('shell', 'cat', '/sdcard/synqora-capture.xml')
         expected = {
-            'Overview': 'Your PC, a little closer.',
-            'Microphone': 'Your voice, in focus.',
+            'Overview': 'Phone and computer. Together.',
+            'Microphone': 'Phone audio, ready for your PC.',
             'Webcam': 'Camera off',
             'Touchpad': 'One finger to move. Two fingers to scroll.',
             'Keyboard': 'Type here. It appears on your PC immediately.',

@@ -21,7 +21,8 @@ import androidx.activity.compose.LocalActivity
         val slowThreshold = (2_000_000_000.0 / refresh).toLong()
         val listener = Window.OnFrameMetricsAvailableListener { _, metrics, _ ->
             if (++seen > 30 && !pressure) { // Skip startup; require sustained pressure.
-                val slow = metrics.getMetric(FrameMetrics.TOTAL_DURATION) > slowThreshold
+                val gpu = if (android.os.Build.VERSION.SDK_INT >= 31) metrics.getMetric(FrameMetrics.GPU_DURATION).coerceAtLeast(0) else 0
+                val slow = maxOf(metrics.getMetric(FrameMetrics.TOTAL_DURATION), gpu) > slowThreshold
                 if (recent.size == 60 && recent.removeFirst()) missed--
                 recent.addLast(slow); if (slow) missed++
                 if (recent.size == 60 && missed >= 20) pressure = true

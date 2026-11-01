@@ -1,3 +1,19 @@
+# Validation — Synqora 0.7.0 / 1 November 2026
+
+Development preview; physical-device and installed-app acceptance remain open. [0.7 design notes](REDESIGN-0.7.md) · [Screenshots](SCREENSHOTS.md).
+
+- **Builds:** Android debug/release, eight unit cases and lint passed (zero lint errors, 35 warnings). Windows Release/publish and MSI build passed with zero build warnings/errors. Shared token checks pass; dark semantic palette endpoint minimum contrast is 6.03:1.
+- **Branding:** the supplied transparent PNG is used byte-for-byte as the export source. Windows and in-app Android artwork have transparent corners; Android launchers use #171717. The adaptive foreground has no nontransparent pixels outside the tested circular launcher mask. [Asset evidence](validation/0.7/brand-assets.json).
+- **Actual touch interaction:** Home / Files / Activity, connection sheet controls, effects selection and persistence of motion/transparency preferences passed on the API 35 emulator. Light appearance is no longer offered. Two native instrumentation cases additionally pass: navigation/disconnected controls and real shader content sampling on first draw and after resize. [Interaction results](validation/0.7/mobile-interaction.json) · [Instrumentation](validation/0.7/instrumentation.txt).
+- **Layouts:** native captures cover all ten mobile screens at 1080×2400/density 420, 720×1600/density 320 and 1920×1080/density 360, plus Settings at 1.6 font scale and solid fallback. Native Windows captures and live-size checks cover requested 720, 1080, 1920 and 2560-pixel widths; 200 layout/selection cases reported no horizontal-bound violations. Scrollable screens can extend below the floating dock. [Windows layout audit](validation/0.7/windows-layout-audit.json).
+- **Signed release:** the final non-debuggable 0.7.0/code 7 APK installed and opened on the disposable emulator and completed 24 real navigation taps. It matches the existing pinned release certificate. [Signature/manifest verification](validation/0.7/android-signature.json) · [Release startup evidence](validation/0.7/release-smoke.json).
+- **Release frame times:** Total frames rendered: 503; Janky frames: 60 (11.93%); 50th percentile: 29ms; 95th percentile: 48ms; 99th percentile: 65ms. API 35 x86_64 / SwiftShader, 1080×2400/density 420, actual navigation without active streaming. This software-emulator result does not establish physical-phone 60 FPS or active-streaming performance. The 60 FPS production acceptance gate remains false. [Raw frame data](validation/0.7/android-release-gfxinfo.txt).
+- **Windows packaging:** published and extracted MSI payloads render all ten dark screens from an unrelated working directory; every cabinet file is compared with the published payload. Files were extracted for review; no installer actions or driver installation were performed. Final packaging logs are kept locally.
+
+The 0.6 Windows single-instance fix is retained. Its process-ownership test is recorded in [0.6 notes](REDESIGN-0.6.md); installed tray/minimize/restore still requires interactive acceptance. This UI/brand revision does not establish new Bluetooth calling, external-app microphone or multi-hour physical-phone battery results. Existing media/protocol acceptance evidence below is historical, not a fresh 0.7 streaming run. Google Play Protect approval is not implied by signing or publishing.
+
+---
+
 # Validation — Synqora 0.5.0 / 22 October 2026
 
 This is a development preview. The checks below establish specific emulator, protocol and packaging behavior; they do not establish a production-ready Phone Link replacement or accepted physical Bluetooth calling.

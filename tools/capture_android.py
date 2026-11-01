@@ -36,21 +36,21 @@ def launch(screen, theme, *extra):
         adb('shell', 'uiautomator', 'dump', '/sdcard/synqora-capture.xml')
         hierarchy = adb('shell', 'cat', '/sdcard/synqora-capture.xml')
         expected = {
-            'Overview': 'Your devices',
-            'Inbox': 'Notifications',
-            'Files': 'Send files between your phone and PC.',
-            'Photos': 'Photos and videos',
-            'Calls': 'Call settings',
-            'Microphone': 'Phone audio, ready for your PC.',
+            'Overview': 'Phone meets PC.',
+            'Inbox': 'Conversations, continued.',
+            'Files': 'Less back and forth.',
+            'Photos': 'A wider view.',
+            'Calls': 'Phone calls.',
+            'Microphone': 'Every word matters.',
             'Webcam': 'Camera off',
             'Touchpad': 'One finger to move. Two fingers to scroll.',
             'Keyboard': 'Type here. It appears on your PC immediately.',
-            'Settings': 'Make Synqora feel right for you.',
+            'Settings': 'The finer details.',
         }[screen]
         # Feature titles also occur on Home tiles; require page-specific content.
         nodes = ET.fromstring(hierarchy).iter('node')
         drawn = any(node.get('package') == 'com.synqora' and node.get('text') == expected for node in nodes)
-        if drawn and 'Settings' in hierarchy:
+        if drawn:
             time.sleep(.4)
             return
     raise RuntimeError(f'{screen} did not draw its app controls in time')
@@ -63,7 +63,7 @@ try:
     adb('shell', 'wm', 'size', '1080x2400')
     adb('shell', 'wm', 'density', '420')
     launch('Overview', 'Dark', '--ez', 'reset_preferences', 'true')
-    for theme in ['Dark', 'Light']:
+    for theme in ['Dark']:
         for screen in screens:
             launch(screen, theme)
             capture(f'android-{theme.lower()}-{screen.lower()}')
@@ -89,7 +89,7 @@ try:
         adb('shell', 'uiautomator', 'dump', '/sdcard/synqora-capture.xml')
         hierarchy = ET.fromstring(adb('shell', 'cat', '/sdcard/synqora-capture.xml'))
         targets = []
-        for label in ['Inbox', 'Device']:
+        for label in ['Activity', 'Home']:
             matches = [node for node in hierarchy.iter('node') if node.get('text') == label]
             bounds = [list(map(int, re.findall(r'\d+', node.get('bounds', '')))) for node in matches]
             x1, y1, x2, y2 = max((b for b in bounds if len(b) == 4), key=lambda b: b[3])

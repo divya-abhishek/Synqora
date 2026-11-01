@@ -84,14 +84,18 @@ class StreamingFrameTest {
             check(input.isEditable) { "Pairing text field is not exposed as editable" }
             check(input.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, Bundle().apply { putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, invitation.readText()) }))
             select("Connect")
-            find("Connected securely")
-            select("Microphone"); select("Start microphone")
-            find("Streaming to ", partial = true)
-            tap("Back to Device", description = true); select("Webcam"); tap("Start camera", description = true)
-            // SurfaceView can obscure the accessibility visibility of an overlaid status pill.
-            // Verify real capture and acknowledged receiver frames instead of waiting on that label.
             lateinit var model: com.synqora.data.SynqoraState
             it.onActivity { activity -> model = (activity.application as SynqoraApplication).state }
+            val connectedBy = SystemClock.uptimeMillis() + 20000
+            while (SystemClock.uptimeMillis() < connectedBy && model.session.device.value.phase != com.synqora.data.ConnectionPhase.Connected) Thread.sleep(100)
+            check(model.session.device.value.phase == com.synqora.data.ConnectionPhase.Connected) { "PC connection did not become ready" }
+            select("Microphone"); select("Start microphone")
+            val audioReadyBy = SystemClock.uptimeMillis() + 20000
+            while (SystemClock.uptimeMillis() < audioReadyBy && model.session.device.value.receivedAudioBytes == 0L) Thread.sleep(100)
+            check(model.session.device.value.receivedAudioBytes > 0) { "Audio did not reach the PC" }
+            tap("Back", description = true); select("Camera"); tap("Start camera", description = true)
+            // SurfaceView can obscure the accessibility visibility of an overlaid status pill.
+            // Verify real capture and acknowledged receiver frames instead of waiting on that label.
             val readyBy = SystemClock.uptimeMillis() + 20000
             while (SystemClock.uptimeMillis() < readyBy && (!model.camera.state.value.ready || model.session.device.value.receivedVideoFrames < 5)) Thread.sleep(100)
             check(model.camera.state.value.ready && model.session.device.value.receivedVideoFrames >= 5) { "Camera did not reach the PC: ${model.camera.state.value.error}" }
@@ -101,12 +105,12 @@ class StreamingFrameTest {
                 Log.i("SynqoraCaptureMetrics", "target=${state.targetFps} encoded=${state.actualFps} resolution=${state.width}x${state.height} encodeMs=${state.encodeMs}")
             }
             // Keep camera analysis + audio + TLS active while exercising real navigation.
-            tap("Back to Device", description = true); tap("Inbox"); tap("Device")
+            tap("Back", description = true); tap("Activity"); tap("Home")
             shell("dumpsys gfxinfo com.synqora reset")
-            repeat(12) { tap("Inbox"); tap("Device") }
+            repeat(12) { tap("Activity"); tap("Home") }
             shell("dumpsys gfxinfo com.synqora framestats").lineSequence().forEach { line -> Log.i("SynqoraFrameTimes", line) }
-            select("Webcam"); tap("Stop camera", description = true)
-            tap("Back to Device", description = true); select("Microphone"); select("Stop")
+            select("Camera"); tap("Stop camera", description = true)
+            tap("Back", description = true); select("Microphone"); select("Stop sharing")
         }
     }
 }

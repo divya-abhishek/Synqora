@@ -1,0 +1,20 @@
+{
+  "suppliedPngUsedByteForByte": true,
+  "sourceSha256": "f084e7eb2382354272ee4f6a713898bc29c90fab9b45f6d70db755a359e25337",
+  "windowsTransparent": true,
+  "androidInAppTransparent": true,
+  "androidLauncherBackground": "#171717",
+  "adaptivePixelsOutsideCircularMask": 0,
+  "windowsMarkVisibleBounds": [
+    18,
+    19,
+    238,
+    237
+  ],
+  "androidAdaptiveVisibleBounds": [
+    116,
+    117,
+    316,
+    315
+  ]
+}

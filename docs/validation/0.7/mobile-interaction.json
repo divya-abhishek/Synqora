@@ -1,0 +1,7 @@
+{
+  "realRootTouchNavigation": true,
+  "noLightModeControl": true,
+  "accessibilityAndEffectsPersistAfterRestart": true,
+  "device": "API35 x86_64 emulator; real input taps; debug APK",
+  "connectionControlsOpenActualSheet": true
+}

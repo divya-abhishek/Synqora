@@ -1,0 +1,7 @@
+
+com.synqora.NavigationTest:.
+com.synqora.GlassLensRenderingTest:.
+
+Time: 10.076
+
+OK (2 tests)

@@ -3,19 +3,19 @@ package com.synqora.design
 import androidx.compose.ui.graphics.Color
 object Tokens {
     val dark = mapOf(
-        "background" to Color(0xFF141516),
-        "surface" to Color(0xFF252628),
-        "solid" to Color(0xFF1F2022),
-        "elevated" to Color(0xFF343638),
-        "text" to Color(0xFFF3F3F1),
-        "muted" to Color(0xFFBFC0BD),
-        "accent" to Color(0xFFECECE8),
-        "onAccent" to Color(0xFF1D1E20),
-        "cyan" to Color(0xFFC6CDCE),
-        "border" to Color(0xFF6E7274),
-        "success" to Color(0xFFB6CDBA),
-        "danger" to Color(0xFFEAB6AE),
-        "ambience" to Color(0xFF343638),
+        "background" to Color(0xFF171717),
+        "surface" to Color(0xFF252421),
+        "solid" to Color(0xFF222120),
+        "elevated" to Color(0xFF34312D),
+        "text" to Color(0xFFF8F2E5),
+        "muted" to Color(0xFFC3BCB0),
+        "accent" to Color(0xFFFFF4D6),
+        "onAccent" to Color(0xFF171717),
+        "cyan" to Color(0xFFE7D8B8),
+        "border" to Color(0xFF6D6252),
+        "success" to Color(0xFFD6DDBF),
+        "danger" to Color(0xFFECC5B6),
+        "ambience" to Color(0xFF41392D),
     )
     val light = mapOf(
         "background" to Color(0xFFE9EBEB),

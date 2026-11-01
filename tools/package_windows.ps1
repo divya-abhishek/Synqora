@@ -8,6 +8,9 @@ if (-not $Development) {
     if ($missingGates.Count) { throw ('Production packaging is not ready: ' + ($missingGates -join ', ') + '. Use -Development for a clearly labeled review build.') }
 }
 $version = $gates.version
+[xml]$installerDefinition = Get-Content -LiteralPath (Join-Path $taskRoot 'installer\Package.wxs') -Raw
+$installerVersion = $installerDefinition.SelectSingleNode('//*[local-name()="Package"]').GetAttribute('Version')
+if ($installerVersion -ne $version) { throw "Installer version $installerVersion does not match release version $version. Update Package.wxs before packaging." }
 $artifactFolder = if ($Development) { Join-Path $taskRoot "dist\development\$version" } else { Join-Path $taskRoot 'dist' }
 $artifactName = if ($Development) { "Synqora-$version-dev-win-x64" } else { "Synqora-$version-win-x64" }
 if (-not (Test-Path -LiteralPath (Join-Path $taskRoot 'native\camera\build\Synqora.Camera.dll'))) { throw 'Build the native camera source with tools/build_camera.cmd before packaging.' }
@@ -33,7 +36,7 @@ Copy-Item (Join-Path $taskRoot 'THIRD-PARTY-NOTICES.md') -Destination $publishFo
 Copy-Item (Join-Path $taskRoot 'LICENSE') -Destination $publishFolder
 $documentation = Join-Path $publishFolder 'docs'
 New-Item -ItemType Directory -Path $documentation -Force | Out-Null
-foreach ($guide in @('INSTALLATION.md', 'VALIDATION.md', 'DESIGN.md', 'DEVICE-INTEGRATION.md', 'CALLING.md', 'SCREENSHOTS.md', 'REDESIGN-0.6.md', 'ANDROID-SECURITY.md', 'PRIVACY.md')) {
+foreach ($guide in @('INSTALLATION.md', 'VALIDATION.md', 'DESIGN.md', 'DEVICE-INTEGRATION.md', 'CALLING.md', 'SCREENSHOTS.md', 'REDESIGN-0.6.md', 'REDESIGN-0.7.md', 'ANDROID-SECURITY.md', 'PRIVACY.md')) {
     Copy-Item (Join-Path $taskRoot "docs\$guide") -Destination $documentation
 }
 Copy-Item (Join-Path $taskRoot 'docs\screenshots') -Destination $documentation -Recurse -Force

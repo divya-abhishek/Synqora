@@ -63,18 +63,37 @@ fun Modifier.recordBackdrop(backdrop: GlassBackdrop) = onGloballyPositioned { ba
     val c = LocalGlass.current
     val shader = remember { runCatching { RuntimeShader(LENS_SHADER) }.getOrNull() }
     if (shader == null) { Box(modifier.background(c["solid"])); return }
+    val effects = remember(shader) { LensEffectCache(shader) }
     val radiusPx = with(androidx.compose.ui.platform.LocalDensity.current) { radius.toPx() }
     val tint = c["elevated"]
     Canvas(modifier.graphicsLayer {
-        shader.setFloatUniform("bounds", size.width, size.height)
-        shader.setFloatUniform("radius", radiusPx)
-        shader.setFloatUniform("pressure", pressure)
-        shader.setFloatUniform("tint", tint.red, tint.green, tint.blue, if (c.dark) .76f else .84f)
-        renderEffect = android.graphics.RenderEffect.createRuntimeShaderEffect(shader, "scene").asComposeRenderEffect()
+        renderEffect = effects.snapshot(size.width, size.height, radiusPx, pressure, tint.copy(alpha = if (c.dark) .76f else .84f))
         clip = true
     }) {
         val offset = position - backdrop.origin - Offset(0f, backdrop.bandTop)
         translate(-offset.x, -offset.y) { drawLayer(backdrop.layer) }
+    }
+}
+
+/** RenderEffect snapshots shader uniforms. Reuse only when those inputs match. */
+@RequiresApi(33)
+private class LensEffectCache(private val shader: RuntimeShader) {
+    private var effect: androidx.compose.ui.graphics.RenderEffect? = null
+    private var width = -1f
+    private var height = -1f
+    private var radius = -1f
+    private var pressure = -1f
+    private var tint = Color.Unspecified
+
+    fun snapshot(w: Float, h: Float, r: Float, p: Float, color: Color): androidx.compose.ui.graphics.RenderEffect {
+        effect?.let { if (width == w && height == h && radius == r && pressure == p && tint == color) return it }
+        shader.setFloatUniform("bounds", w, h)
+        shader.setFloatUniform("radius", r)
+        shader.setFloatUniform("pressure", p)
+        shader.setFloatUniform("tint", color.red, color.green, color.blue, color.alpha)
+        val next = android.graphics.RenderEffect.createRuntimeShaderEffect(shader, "scene").asComposeRenderEffect()
+        width = w; height = h; radius = r; pressure = p; tint = color; effect = next
+        return next
     }
 }
 

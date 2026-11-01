@@ -6,14 +6,14 @@
 
 Synqora connects directly over your local network. It has native Windows and Android apps, a monochrome glass interface, and no cloud account in the connection path.
 
-**Current release: [0.6.0 development preview](https://github.com/divya-abhishek/Synqora/releases/tag/v0.6.0-dev).** This is a test build. Physical-phone performance, external microphone capture and installation lifecycle testing are still in progress. It is not a finished replacement for a production device driver.
+**Current release: [0.7.0 development preview](https://github.com/divya-abhishek/Synqora/releases/tag/v0.7.0-dev).** This is a test build. Physical-phone performance, external microphone capture and installation lifecycle testing are still in progress. It is not a finished replacement for a production device driver.
 
 <p>
-<img src="docs/screenshots/0.6/windows-dark-overview.png" alt="Synqora's Windows sidebar and workspace in dark mode" width="720">
-<img src="docs/screenshots/0.6/android-dark-overview.png" alt="Synqora's Android dashboard in dark mode" width="240">
+<img src="docs/screenshots/0.7/windows-dark-overview.png" alt="Synqora's Windows sidebar and workspace in dark mode" width="720">
+<img src="docs/screenshots/0.7/android-dark-overview.png" alt="Synqora's Android dashboard in dark mode" width="240">
 </p>
 
-[Redesign notes and test limits](docs/REDESIGN-0.6.md) · [See the native app screens](docs/SCREENSHOTS.md) · [Installation and troubleshooting](docs/INSTALLATION.md) · [Validation and known limits](docs/VALIDATION.md)
+[Redesign notes and test limits](docs/REDESIGN-0.7.md) · [See the native app screens](docs/SCREENSHOTS.md) · [Installation and troubleshooting](docs/INSTALLATION.md) · [Validation and known limits](docs/VALIDATION.md)
 
 ## What it does
 
@@ -35,8 +35,8 @@ Audio/video and remote input use separate bounded transport lanes. Pairing authe
 
 - **Files:** choose a file on either device. Incoming transfers ask for approval. PC saves go to `Downloads/Synqora`; Android uses its system save picker. There is no fixed file-size cap, but receiving needs sufficient storage. Android stages and verifies the file locally before copying it to your chosen destination.
 - **Photos:** on the phone open **Files → Photos and videos**, enable gallery sharing and choose Android photo access. On PC open **Photos**. Thumbnails load on demand; **Save original** transfers that item. Gallery sync does not copy the entire library automatically or open the camera.
-- **Notifications:** on the phone open **Inbox**, enable sync and grant notification access. Replies work only where the source notification provides an inline reply. An app may require unlocking the phone or restrict its actions.
-- **Calls:** on the phone open **Inbox → Call settings**. History and placing calls have separate opt-ins and permissions. Android/installer policy can restrict call-log access. The normal MSI can request a call using the phone's audio route. The separate **experimental calling MSIX** declares the Windows Bluetooth phone capabilities and implements HFP dialing, active-call controls and PC/phone audio routing. Hardware and MSIX installation acceptance remain open; see [calling setup](docs/CALLING.md).
+- **Notifications:** on the phone open **Activity**, enable sync and grant notification access. Replies work only where the source notification provides an inline reply. An app may require unlocking the phone or restrict its actions.
+- **Calls:** on the phone open **Activity → Call settings**. History and placing calls have separate opt-ins and permissions. Android/installer policy can restrict call-log access. The normal MSI can request a call using the phone's audio route. The separate **experimental calling MSIX** declares the Windows Bluetooth phone capabilities and implements HFP dialing, active-call controls and PC/phone audio routing. Hardware and MSIX installation acceptance remain open; see [calling setup](docs/CALLING.md).
 
 WhatsApp's private call history and direct outgoing-call API are not available to Synqora. Notification actions and Bluetooth-exposed calls depend on the calling app and phone. This preview is not yet a complete Phone Link calling replacement.
 
@@ -60,9 +60,9 @@ The MSI bundles the app's .NET, Windows App SDK, graphics and Visual C++ runtime
 
 ## Install and connect
 
-1. Open the [0.5.0 preview release](https://github.com/divya-abhishek/Synqora/releases/tag/v0.6.0-dev). Download the **Windows MSI** and **Android APK**. The ZIP is a portable client for testing and does not register the camera component.
+1. Open the [0.7.0 preview release](https://github.com/divya-abhishek/Synqora/releases/tag/v0.7.0-dev). Download the **Windows MSI** and **Android APK**. The ZIP is a portable client for testing and does not register the camera component.
 2. Close Synqora and camera-consuming apps, then run the MSI. On Android, install the APK using the device's normal package installer. Preview Windows installers are not production code-signed.
-3. Open Synqora on the PC and choose **Connect phone**. On Android, choose **Connect a computer** or the link icon, then **Scan PC code**. Pasting the pairing link also works. Invitations expire after ten minutes.
+3. Open Synqora on the PC and choose **Connect phone**. On Android, choose **Connect a computer** or the QR button, then **Scan PC code**. Pasting the pairing link also works. Invitations expire after ten minutes.
 4. Start Microphone or Webcam on the phone. Allow the corresponding Android permission when prompted. Keep the active-session notification available so you can disconnect.
 5. For Touchpad and Keyboard, enable **Allow phone keyboard & pointer** on the PC. Focus the destination PC app before typing. Disconnecting revokes remote-input permission.
 
@@ -94,7 +94,7 @@ The portable ZIP does not register the camera source. Upgrading requires closing
 - External-app microphone capture, clean-machine offline install, upgrade/uninstall and physical-device acceptance remain open.
 - The original Synqora audio-driver research is unsigned and excluded from consumer packages. VB-CABLE is the available optional route.
 - Input into elevated Windows apps can be blocked by Windows. Consumer USB setup and automatic reconnect are unfinished.
-- Windows uses native thin acrylic. Android uses restrained layered glass and immediate navigation. Android offers System, Light and Dark themes; Windows retains its dark acrylic shell. Older or constrained devices use fallbacks. Apple's exact proprietary rendering and physics are not included.
+- Windows uses native thin acrylic. Android uses restrained layered glass and immediate navigation. Both apps use dark-only charcoal (#171717) and ivory (#FFF4D6); mobile has a new centered home, one floating capsule and warm gradient panels. Windows retains its acrylic shell. Older or constrained devices use fallbacks. Apple's exact proprietary rendering and physics are not included.
 
 ## Build from source
 

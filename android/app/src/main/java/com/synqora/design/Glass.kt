@@ -27,9 +27,9 @@ val LocalGlass = staticCompositionLocalOf { GlassStyle(Tokens.dark, true, false,
 
 @Composable
 fun SynqoraTheme(dark: Boolean, solid: Boolean, motion: Boolean, economy: Boolean, highContrast: Boolean = false, rich: Boolean = false, content: @Composable () -> Unit) {
-    var colors = if (dark) Tokens.dark + mapOf("background" to Color.Black, "surface" to Color(0xFF1C1C1E), "solid" to Color(0xFF1C1C1E), "elevated" to Color(0xFF303033), "accent" to Color(0xFFF4F4F5), "onAccent" to Color(0xFF19191B), "muted" to Color(0xFFB0B0B8)) else Tokens.light + mapOf("background" to Color.White, "surface" to Color(0xFFF2F2F7), "solid" to Color(0xFFF2F2F7), "elevated" to Color(0xFFF7F7FA), "accent" to Color(0xFF202024), "onAccent" to Color.White, "muted" to Color(0xFF606069))
+    var colors = Tokens.dark
     if (highContrast) colors = colors + mapOf("background" to if (dark) Color.Black else Color.White, "surface" to if (dark) Color.Black else Color.White, "solid" to if (dark) Color.Black else Color.White, "text" to if (dark) Color.White else Color.Black, "muted" to if (dark) Color.White else Color.Black)
-    val c = GlassStyle(colors, dark, solid || highContrast, motion, economy, rich)
+    val c = GlassStyle(colors, true, solid || highContrast, motion, economy, rich)
     val scheme = if (dark) darkColorScheme(primary = c["accent"], onPrimary = c["onAccent"], background = c["background"], surface = c["surface"], onSurface = c["text"], onSurfaceVariant = c["muted"], outline = c["border"], secondary = c["cyan"])
     else lightColorScheme(primary = c["accent"], onPrimary = c["onAccent"], background = c["background"], surface = c["surface"], onSurface = c["text"], onSurfaceVariant = c["muted"], outline = c["border"], secondary = c["cyan"])
     CompositionLocalProvider(LocalGlass provides c) { MaterialTheme(colorScheme = scheme, content = content) }
@@ -41,21 +41,21 @@ fun GlassSurface(modifier: Modifier = Modifier, material: String = "Regular", pa
     val m = Tokens.materials.getValue(if (c.solid) "SolidFallback" else material)
     val shape = RoundedCornerShape(radius ?: m.radius.dp)
     val floating = material == "Elevated" || material == "Frosted"
-    val fill = c[if (floating) "elevated" else "surface"].copy(alpha = if (c.solid || !floating) 1f else .88f)
-    val rim = Brush.linearGradient(listOf(c["text"].copy(alpha = if (floating) .20f else .035f), c["text"].copy(alpha = .035f)))
-    Column(modifier.shadow(if (floating && !c.economy) 8.dp else 0.dp, shape).clip(shape).background(fill).border(.5.dp, rim, shape).padding(padding), verticalArrangement = Arrangement.spacedBy(16.dp), content = content)
+    val fill = if (c.solid) Brush.linearGradient(listOf(c["solid"], c["solid"])) else Brush.radialGradient(listOf(c["ambience"].copy(alpha = if (floating) .92f else .75f), c["surface"].copy(alpha = .95f)), center = androidx.compose.ui.geometry.Offset(450f, 0f), radius = 900f)
+    val rim = Brush.linearGradient(listOf(c["accent"].copy(alpha = if (floating) .30f else .18f), c["accent"].copy(alpha = .025f), c["accent"].copy(alpha = .08f)))
+    Column(modifier.shadow(if (floating && !c.economy) 8.dp else 0.dp, shape).clip(shape).background(fill).border(.7.dp, rim, shape).padding(padding), verticalArrangement = Arrangement.spacedBy(16.dp), content = content)
 }
 
 @Composable fun Modifier.glassPress(source: MutableInteractionSource): Modifier {
     val c = LocalGlass.current
     val pressed by source.collectIsPressedAsState()
-    val scale by animateFloatAsState(if (pressed) .975f else 1f, if (c.motion) spring(.88f, 520f) else snap(), label = "glass compression")
+    val scale by animateFloatAsState(if (pressed) .965f else 1f, if (c.motion) spring(.86f, 650f) else snap(), label = "glass compression")
     return graphicsLayer { scaleX = scale; scaleY = scale }
 }
 
 @Composable fun GlassCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) = GlassSurface(modifier, "Subtle", content = content)
 @Composable fun GlassText(text: String, size: Int = 14, token: String = "text", bold: Boolean = false, modifier: Modifier = Modifier) = Text(text, modifier, color = LocalGlass.current[token], fontSize = size.sp, fontWeight = if (bold) FontWeight.SemiBold else FontWeight.Normal, lineHeight = (size * 1.32).sp)
-@Composable fun GlassDisplay(text: String, size: Int = 30, modifier: Modifier = Modifier) = Text(text, modifier, color = LocalGlass.current["text"], fontSize = size.sp, fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, lineHeight = (size * 1.18f).sp, letterSpacing = (-.7).sp)
+@Composable fun GlassDisplay(text: String, size: Int = 30, modifier: Modifier = Modifier) = Text(text, modifier, color = LocalGlass.current["text"], fontSize = size.sp, fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Medium, lineHeight = (size * 1.18f).sp, letterSpacing = (-.7).sp)
 @Composable fun GlassIcon(icon: ImageVector, label: String? = null, size: Dp = 24.dp, token: String = "accent") = Icon(icon, contentDescription = label, modifier = Modifier.size(size), tint = LocalGlass.current[token])
 
 @Composable

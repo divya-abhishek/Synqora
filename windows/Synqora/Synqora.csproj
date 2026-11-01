@@ -13,7 +13,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\synqora.ico</ApplicationIcon>
-    <Version>0.6.0</Version>
+    <Version>0.7.0</Version>
     <Company>Synqora</Company>
     <Product>Synqora</Product>
     <Description>Synqora encrypted phone audio, camera and remote controls</Description>

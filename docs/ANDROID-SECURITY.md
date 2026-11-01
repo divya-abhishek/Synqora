@@ -1,5 +1,7 @@
 # Android signing and Play Protect
 
+**Current 0.7.0:** the final APK retains the pinned release signing identity; its signature, manifest and exact file hash are recorded in the [0.7 verification report](validation/0.7/android-signature.json). The original Google appeal described below concerns the exact 0.5.0 APK. There is no recorded Google installation approval for 0.7.0.
+
 Checked on 22 October 2026 for the public **0.5.0 development preview**. The published APK is already signed with Synqora's release key and is not debuggable. No replacement APK or signing-key change is needed to fix a missing signature.
 
 ## Verified release identity

@@ -66,8 +66,7 @@ class SynqoraState(private val app: Application) : AndroidViewModel(app) {
     var displayDimmed by mutableStateOf(false); private set
     fun dimDisplay(value: Boolean) { displayDimmed = value }
     val status = combine(session.device.map { it.phase to it.name }.distinctUntilChanged(), camera.state.map { it.active }.distinctUntilChanged(), snapshotFlow { microphoneRunning }) { device, cam, mic -> SessionStatus(device.first, device.second, mic, cam) }.stateIn(viewModelScope, SharingStarted.Eagerly, SessionStatus())
-    var theme by mutableStateOf(prefs.getString("theme", "System")!!); private set
-    fun theme(value: String) { theme = value; prefs.edit().putString("theme", value).apply() }
+    val theme = "Dark"
     var reduceMotion by mutableStateOf(prefs.getBoolean("motion", false)); private set
     var reduceTransparency by mutableStateOf(prefs.getBoolean("transparency", false)); private set
     var effects by mutableStateOf(prefs.getString("effects", "Balanced")!!); private set

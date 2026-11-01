@@ -4,19 +4,19 @@ public static class Tokens
 {
     public static readonly System.Collections.Generic.Dictionary<string, string> Dark = new()
     {
-        ["background"] = "#141516",
-        ["surface"] = "#252628",
-        ["solid"] = "#1F2022",
-        ["elevated"] = "#343638",
-        ["text"] = "#F3F3F1",
-        ["muted"] = "#BFC0BD",
-        ["accent"] = "#ECECE8",
-        ["onAccent"] = "#1D1E20",
-        ["cyan"] = "#C6CDCE",
-        ["border"] = "#6E7274",
-        ["success"] = "#B6CDBA",
-        ["danger"] = "#EAB6AE",
-        ["ambience"] = "#343638",
+        ["background"] = "#171717",
+        ["surface"] = "#252421",
+        ["solid"] = "#222120",
+        ["elevated"] = "#34312D",
+        ["text"] = "#F8F2E5",
+        ["muted"] = "#C3BCB0",
+        ["accent"] = "#FFF4D6",
+        ["onAccent"] = "#171717",
+        ["cyan"] = "#E7D8B8",
+        ["border"] = "#6D6252",
+        ["success"] = "#D6DDBF",
+        ["danger"] = "#ECC5B6",
+        ["ambience"] = "#41392D",
     };
     public static readonly System.Collections.Generic.Dictionary<string, string> Light = new()
     {

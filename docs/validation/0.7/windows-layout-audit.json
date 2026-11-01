@@ -1,0 +1,1802 @@
+[
+  {
+    "scenario": "Dark",
+    "destination": "Overview",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 23,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "Dark",
+    "destination": "Inbox",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 10,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "Dark",
+    "destination": "Files",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 12,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "Dark",
+    "destination": "Photos",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 15,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "Dark",
+    "destination": "Calls",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 28,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "Dark",
+    "destination": "Microphone",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 30,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "Dark",
+    "destination": "Webcam",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 20,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "Dark",
+    "destination": "Touchpad",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 22,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "Dark",
+    "destination": "Keyboard",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 22,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "Dark",
+    "destination": "Settings",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 19,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Overview",
+    "width": 704,
+    "viewport": 548,
+    "visited": 23,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Inbox",
+    "width": 704,
+    "viewport": 548,
+    "visited": 10,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Files",
+    "width": 704,
+    "viewport": 548,
+    "visited": 12,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Photos",
+    "width": 704,
+    "viewport": 548,
+    "visited": 15,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Calls",
+    "width": 704,
+    "viewport": 548,
+    "visited": 28,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Microphone",
+    "width": 704,
+    "viewport": 548,
+    "visited": 30,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Webcam",
+    "width": 704,
+    "viewport": 548,
+    "visited": 20,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Touchpad",
+    "width": 704,
+    "viewport": 548,
+    "visited": 22,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Keyboard",
+    "width": 704,
+    "viewport": 548,
+    "visited": 22,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Settings",
+    "width": 704,
+    "viewport": 548,
+    "visited": 19,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Overview",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 23,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Inbox",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 10,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Files",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 12,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Photos",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 15,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Calls",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 28,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Microphone",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 30,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Webcam",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 20,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Touchpad",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 22,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Keyboard",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 22,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Settings",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 19,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Overview",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 23,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Inbox",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 10,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Files",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 12,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Photos",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 15,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Calls",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 28,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Microphone",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 30,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Webcam",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 20,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Touchpad",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 22,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Keyboard",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 22,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Settings",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 19,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Overview",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 23,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Inbox",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 10,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Files",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 12,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Photos",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 15,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Calls",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 28,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Microphone",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 30,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Webcam",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 20,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Touchpad",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 22,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Keyboard",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 22,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Settings",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 19,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "Dark",
+    "destination": "Overview",
+    "width": 704,
+    "viewport": 548,
+    "visited": 23,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "Dark",
+    "destination": "Inbox",
+    "width": 704,
+    "viewport": 548,
+    "visited": 10,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "Dark",
+    "destination": "Files",
+    "width": 704,
+    "viewport": 548,
+    "visited": 12,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "Dark",
+    "destination": "Photos",
+    "width": 704,
+    "viewport": 548,
+    "visited": 15,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "Dark",
+    "destination": "Calls",
+    "width": 704,
+    "viewport": 548,
+    "visited": 28,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "Dark",
+    "destination": "Microphone",
+    "width": 704,
+    "viewport": 548,
+    "visited": 30,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "Dark",
+    "destination": "Webcam",
+    "width": 704,
+    "viewport": 548,
+    "visited": 20,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "Dark",
+    "destination": "Touchpad",
+    "width": 704,
+    "viewport": 548,
+    "visited": 22,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "Dark",
+    "destination": "Keyboard",
+    "width": 704,
+    "viewport": 548,
+    "visited": 22,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "Dark",
+    "destination": "Settings",
+    "width": 704,
+    "viewport": 548,
+    "visited": 19,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Overview",
+    "width": 704,
+    "viewport": 548,
+    "visited": 23,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Inbox",
+    "width": 704,
+    "viewport": 548,
+    "visited": 10,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Files",
+    "width": 704,
+    "viewport": 548,
+    "visited": 12,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Photos",
+    "width": 704,
+    "viewport": 548,
+    "visited": 15,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Calls",
+    "width": 704,
+    "viewport": 548,
+    "visited": 28,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Microphone",
+    "width": 704,
+    "viewport": 548,
+    "visited": 30,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Webcam",
+    "width": 704,
+    "viewport": 548,
+    "visited": 20,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Touchpad",
+    "width": 704,
+    "viewport": 548,
+    "visited": 22,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Keyboard",
+    "width": 704,
+    "viewport": 548,
+    "visited": 22,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Settings",
+    "width": 704,
+    "viewport": 548,
+    "visited": 19,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Overview",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 23,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Inbox",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 10,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Files",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 12,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Photos",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 15,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Calls",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 28,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Microphone",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 30,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Webcam",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 20,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Touchpad",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 22,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Keyboard",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 22,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Settings",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 19,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Overview",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 23,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Inbox",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 10,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Files",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 12,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Photos",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 15,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Calls",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 28,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Microphone",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 30,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Webcam",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 20,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Touchpad",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 22,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Keyboard",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 22,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Settings",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 19,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Overview",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 23,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Inbox",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 10,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Files",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 12,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Photos",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 15,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Calls",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 28,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Microphone",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 30,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Webcam",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 20,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Touchpad",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 22,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Keyboard",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 22,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Settings",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 19,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "Dark",
+    "destination": "Overview",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 23,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "Dark",
+    "destination": "Inbox",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 10,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "Dark",
+    "destination": "Files",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 12,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "Dark",
+    "destination": "Photos",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 15,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "Dark",
+    "destination": "Calls",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 28,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "Dark",
+    "destination": "Microphone",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 30,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "Dark",
+    "destination": "Webcam",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 20,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "Dark",
+    "destination": "Touchpad",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 22,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "Dark",
+    "destination": "Keyboard",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 22,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "Dark",
+    "destination": "Settings",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 19,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Overview",
+    "width": 704,
+    "viewport": 548,
+    "visited": 23,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Inbox",
+    "width": 704,
+    "viewport": 548,
+    "visited": 10,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Files",
+    "width": 704,
+    "viewport": 548,
+    "visited": 12,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Photos",
+    "width": 704,
+    "viewport": 548,
+    "visited": 15,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Calls",
+    "width": 704,
+    "viewport": 548,
+    "visited": 28,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Microphone",
+    "width": 704,
+    "viewport": 548,
+    "visited": 30,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Webcam",
+    "width": 704,
+    "viewport": 548,
+    "visited": 20,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Touchpad",
+    "width": 704,
+    "viewport": 548,
+    "visited": 22,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Keyboard",
+    "width": 704,
+    "viewport": 548,
+    "visited": 22,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Settings",
+    "width": 704,
+    "viewport": 548,
+    "visited": 19,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Overview",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 23,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Inbox",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 10,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Files",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 12,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Photos",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 15,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Calls",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 28,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Microphone",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 30,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Webcam",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 20,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Touchpad",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 22,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Keyboard",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 22,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Settings",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 19,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Overview",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 23,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Inbox",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 10,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Files",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 12,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Photos",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 15,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Calls",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 28,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Microphone",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 30,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Webcam",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 20,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Touchpad",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 22,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Keyboard",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 22,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Settings",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 19,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Overview",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 23,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Inbox",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 10,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Files",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 12,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Photos",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 15,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Calls",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 28,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Microphone",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 30,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Webcam",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 20,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Touchpad",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 22,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Keyboard",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 22,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Settings",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 19,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "Dark",
+    "destination": "Overview",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 23,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "Dark",
+    "destination": "Inbox",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 10,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "Dark",
+    "destination": "Files",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 12,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "Dark",
+    "destination": "Photos",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 15,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "Dark",
+    "destination": "Calls",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 28,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "Dark",
+    "destination": "Microphone",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 30,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "Dark",
+    "destination": "Webcam",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 20,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "Dark",
+    "destination": "Touchpad",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 22,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "Dark",
+    "destination": "Keyboard",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 22,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "Dark",
+    "destination": "Settings",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 19,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Overview",
+    "width": 704,
+    "viewport": 548,
+    "visited": 23,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Inbox",
+    "width": 704,
+    "viewport": 548,
+    "visited": 10,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Files",
+    "width": 704,
+    "viewport": 548,
+    "visited": 12,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Photos",
+    "width": 704,
+    "viewport": 548,
+    "visited": 15,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Calls",
+    "width": 704,
+    "viewport": 548,
+    "visited": 28,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Microphone",
+    "width": 704,
+    "viewport": 548,
+    "visited": 30,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Webcam",
+    "width": 704,
+    "viewport": 548,
+    "visited": 20,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Touchpad",
+    "width": 704,
+    "viewport": 548,
+    "visited": 22,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Keyboard",
+    "width": 704,
+    "viewport": 548,
+    "visited": 22,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Settings",
+    "width": 704,
+    "viewport": 548,
+    "visited": 19,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Overview",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 23,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Inbox",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 10,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Files",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 12,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Photos",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 15,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Calls",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 28,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Microphone",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 30,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Webcam",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 20,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Touchpad",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 22,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Keyboard",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 22,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Settings",
+    "width": 1904,
+    "viewport": 1576,
+    "visited": 19,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Overview",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 23,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Inbox",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 10,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Files",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 12,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Photos",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 15,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Calls",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 28,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Microphone",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 30,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Webcam",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 20,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Touchpad",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 22,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Keyboard",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 22,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Settings",
+    "width": 1064,
+    "viewport": 736,
+    "visited": 19,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Overview",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 23,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Inbox",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 10,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Files",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 12,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Photos",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 15,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Calls",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 28,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Microphone",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 30,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Webcam",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 20,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Touchpad",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 22,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Keyboard",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 22,
+    "selected": 1,
+    "violations": []
+  },
+  {
+    "scenario": "live-resize",
+    "destination": "Settings",
+    "width": 1924,
+    "viewport": 1596,
+    "visited": 19,
+    "selected": 1,
+    "violations": []
+  }
+]

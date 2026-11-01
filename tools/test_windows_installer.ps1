@@ -13,6 +13,9 @@ New-Item -ItemType Directory -Path $work,$payload | Out-Null
 dotnet $wix msi decompile ([IO.Path]::GetFullPath($Msi)) -x $extracted -o $definition
 if ($LASTEXITCODE -ne 0) { throw 'Could not read the MSI payload.' }
 [xml]$document = Get-Content -LiteralPath $definition -Raw
+$expectedVersion = (Get-Content -LiteralPath (Join-Path $taskRoot 'release-gates.json') -Raw | ConvertFrom-Json).version
+$actualVersion = $document.SelectSingleNode('//*[local-name()="Package"]').GetAttribute('Version')
+if ($actualVersion -ne $expectedVersion) { throw "Extracted MSI version $actualVersion does not match release version $expectedVersion." }
 $count = 0
 foreach ($file in $document.SelectNodes('//*[local-name()="File"]')) {
     $parts = [Collections.Generic.List[string]]::new()

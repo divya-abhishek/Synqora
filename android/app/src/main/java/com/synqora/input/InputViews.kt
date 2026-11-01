@@ -88,13 +88,13 @@ class RawTouchpadView(context: Context) : View(context) {
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         val dp = resources.displayMetrics.density
-        paint.color = if (dark) 0xff777b7e.toInt() else 0xff777c80.toInt()
+        paint.color = if (dark) 0xff756c5c.toInt() else 0xff777c80.toInt()
         paint.alpha = 28
         val step = 24 * dp
         var y = step
         while (y < height) { var x = step; while (x < width) { canvas.drawCircle(x, y, .7f * dp, paint); x += step }; y += step }
         paint.alpha = 255; paint.textAlign = Paint.Align.CENTER; paint.textSize = android.util.TypedValue.applyDimension(android.util.TypedValue.COMPLEX_UNIT_SP, 14f, resources.displayMetrics)
-        paint.color = if (dark) 0xffb9bdc0.toInt() else 0xff53575b.toInt()
+        paint.color = if (dark) 0xfffff4d6.toInt() else 0xff53575b.toInt()
         label.draw(canvas, if (ready) "One finger to move · two to scroll" else "Connect your PC to use the touchpad", width, height, (24 * dp).toInt(), paint.textSize, paint.color)
         if (active) { paint.alpha = 35; canvas.drawCircle(xTouch, yTouch, 22 * dp, paint); paint.alpha = 220; canvas.drawCircle(xTouch, yTouch, 3 * dp, paint) }
     }
@@ -174,7 +174,7 @@ class LiveKeyboardView(context: Context) : View(context) {
         return if (code > 0) editor?.commitText(String(Character.toChars(code)), 1) ?: false else false
     }
     override fun onDraw(canvas: Canvas) {
-        paint.isAntiAlias = true; paint.color = if (dark) 0xffbabdc0.toInt() else 0xff53575b.toInt()
+        paint.isAntiAlias = true; paint.color = if (dark) 0xfffff4d6.toInt() else 0xff53575b.toInt()
         paint.textSize = android.util.TypedValue.applyDimension(android.util.TypedValue.COMPLEX_UNIT_SP, 14f, resources.displayMetrics); paint.textAlign = Paint.Align.CENTER
         label.draw(canvas, if (ready) "Typing live · tap here for keyboard" else "Connect your PC and allow remote input", width, height, (16 * resources.displayMetrics.density).toInt(), paint.textSize, paint.color)
     }

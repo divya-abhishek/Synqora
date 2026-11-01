@@ -168,7 +168,7 @@ public sealed partial class MainWindow : Window
         root.Resources["ContentDialogBorderBrush"] = g.Brush("text", .13);
         root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(48) });
         root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-        var title = Row(10, g.Text("Synqora", 14, "text", true), g.Text("Preview 0.6", 11, "muted"));
+        var title = Row(10, Brand.Mark(g, 30), g.Text("Synqora", 14, "text", true), g.Text("Preview 0.7", 11, "muted"));
         title.Margin = new(24, 0, 150, 0); title.Background = g.Brush("background", .01);
         root.Children.Add(title); SetTitleBar(title);
         AppWindow.TitleBar.ButtonForegroundColor = g.Color("text");

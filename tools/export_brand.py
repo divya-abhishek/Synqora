@@ -1,59 +1,27 @@
-"""Render Synqora's original paired-loop symbol into platform icon formats.
-The glyph stays inside Android's adaptive-icon safe area.
+"""Export the user-supplied overlapping-squares/S logo without cropping it.
+The supplied raster is authoritative; vectors are compact monochrome notification counterparts.
 """
 from pathlib import Path
-import json
-from PIL import Image, ImageDraw
-
+from PIL import Image
 root = Path(__file__).resolve().parents[1]
-brand = root / 'brand'
-palette = json.loads((root / 'design/tokens.json').read_text())['themes']['dark']
-paths = ['M54 40 H44 C36 40 30 46 30 54 V65 C30 73 36 79 44 79 H52 C60 79 66 73 66 65 V57', 'M54 68 H64 C72 68 78 62 78 54 V43 C78 35 72 29 64 29 H56 C48 29 42 35 42 43 V51']
-(brand / 'synqora-mark.svg').write_text(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="18 18 72 72"><g fill="none" stroke="{palette["accent"]}" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">'+''.join(f'<path d="{p}"/>' for p in paths)+'</g></svg>\n')
-
-def mark(size):
-    scale = 8
-    image = Image.new('RGBA', (size * scale, size * scale))
-    draw = ImageDraw.Draw(image)
-    lines = []
-    points = []
-    def curve(start, a, b, end):
-        for step in range(1, 81):
-            t = step / 80; u = 1-t
-            points.append((u**3*start[0]+3*u*u*t*a[0]+3*u*t*t*b[0]+t**3*end[0], u**3*start[1]+3*u*u*t*a[1]+3*u*t*t*b[1]+t**3*end[1]))
-    points = [(54,40),(44,40)]; curve(points[-1], (36,40),(30,46),(30,54)); points.append((30,65)); curve(points[-1], (30,73),(36,79),(44,79)); points.append((52,79)); curve(points[-1], (60,79),(66,73),(66,65)); points.append((66,57)); lines.append(points)
-    points = [(54,68),(64,68)]; curve(points[-1], (72,68),(78,62),(78,54)); points.append((78,43)); curve(points[-1], (78,35),(72,29),(64,29)); points.append((56,29)); curve(points[-1], (48,29),(42,35),(42,43)); points.append((42,51)); lines.append(points)
-    width = round(8/108*size*scale)
-    for line in lines:
-        line = [(x/108*size*scale, y/108*size*scale) for x,y in line]
-        draw.line(line, fill=palette['accent'], width=width, joint='curve')
-        for x,y in line: draw.ellipse((x-width/2,y-width/2,x+width/2,y+width/2),fill=palette['accent'])
-    return image.resize((size,size), Image.Resampling.LANCZOS)
-
-def icon(size):
-    image = Image.new('RGBA', (size, size))
-    ImageDraw.Draw(image).rounded_rectangle((0, 0, size - 1, size - 1), radius=size * .22, fill=palette['solid'])
-    image.alpha_composite(mark(size))
-    return image
-
-assets = root / 'windows/Synqora/Assets'
-assets.mkdir(parents=True, exist_ok=True)
-mark(256).save(assets / 'synqora-mark.png')
-icon(256).save(assets / 'synqora.ico', sizes=[(s, s) for s in [16, 24, 32, 48, 64, 128, 256]])
-icon(512).save(brand / 'synqora-app-icon.png')
-mark(512).save(brand / 'synqora-mark.png')
-res = root / 'android/app/src/main/res'
-(res / 'drawable').mkdir(parents=True, exist_ok=True)
-old = res / 'drawable/synqora_mark.png'
-if old.exists(): old.unlink()
-vector_paths = ''.join(f'<path android:pathData="{p}" android:fillColor="@android:color/transparent" android:strokeColor="#FFFFFFFF" android:strokeWidth="8" android:strokeLineCap="round" android:strokeLineJoin="round"/>' for p in paths)
-(res / 'drawable/synqora_mark.xml').write_text('<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="32dp" android:height="32dp" android:viewportWidth="72" android:viewportHeight="72"><group android:translateX="-18" android:translateY="-18">'+vector_paths+'</group></vector>\n')
-(res / 'drawable/synqora_launcher_mark.xml').write_text('<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">'+vector_paths+'</vector>\n')
-for density, size in [('mdpi', 48), ('hdpi', 72), ('xhdpi', 96), ('xxhdpi', 144), ('xxxhdpi', 192)]:
-    directory = res / ('mipmap-' + density)
-    directory.mkdir(exist_ok=True)
-    icon(size).save(directory / 'ic_launcher.png')
-(res / 'values/colors.xml').write_text(f'<resources><color name="synqora_icon_background">{palette["solid"]}</color></resources>\n')
-alpha = mark(512).getchannel('A').getbbox()
-assert alpha and min(alpha[:2]) >= 512*.22 and max(alpha[2:]) <= 512*.8, alpha
-print('Exported paired-loop symbol, native vector and padded platform icons; safe area verified.')
+source = Image.open(root / 'brand/synqora-source.png').convert('RGBA')
+brand = root/'brand'; assets=root/'windows/Synqora/Assets'; res=root/'android/app/src/main/res'
+def icon(size): return source.resize((size,size), Image.Resampling.LANCZOS)
+icon(256).save(assets/'synqora-mark.png')
+icon(256).save(assets/'synqora.ico',sizes=[(s,s) for s in [16,24,32,48,64,128,256]])
+icon(512).save(brand/'synqora-app-icon.png'); icon(512).save(brand/'synqora-mark.png')
+# Equivalent small monochrome geometry; no legacy logo remains in notification assets.
+paths=['M44 22 H73 Q85 22 85 34 V63 Q85 75 73 75 H44 Q32 75 32 63 V34 Q32 22 44 22 Z', 'M32 31 H62 Q75 31 75 44 V73 Q75 85 62 85 H32 Q20 85 20 73 V44 Q20 31 32 31 Z', 'M64 46 C63 35 44 36 42 45 C39 55 50 57 57 57 M54 54 L59 57 L54 60 M42 57 C43 69 64 68 65 58 C66 49 58 47 50 47 M53 44 L49 47 L53 50']
+(brand/'synqora-mark.svg').write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108"><g fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">'+''.join(f'<path d="{p}"/>' for p in paths)+'</g></svg>')
+for name in ['synqora_mark','synqora_launcher_mark']:
+    (res/f'drawable/{name}.xml').unlink(missing_ok=True)
+foreground = Image.new('RGBA', (432,432), (0,0,0,0))
+foreground.alpha_composite(icon(288), (72,72))
+foreground.save(res/'drawable/synqora_launcher_mark.png')
+# Notification small icons must be transparent monochrome Android vectors.
+(res/'drawable/synqora_mark.xml').write_text('<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="32dp" android:height="32dp" android:viewportWidth="108" android:viewportHeight="108">'+''.join(f'<path android:pathData="{p}" android:fillColor="@android:color/transparent" android:strokeColor="#FFFFFFFF" android:strokeWidth="2.4" android:strokeLineCap="round" android:strokeLineJoin="round"/>' for p in paths)+'</vector>')
+# In-app brand uses the actual supplied image; not the reduced notification vector.
+# The logo is reserved for platform icons, never in-app branding.
+for density,size in [('mdpi',48),('hdpi',72),('xhdpi',96),('xxhdpi',144),('xxxhdpi',192)]: icon(size).save(res/f'mipmap-{density}/ic_launcher.png')
+(res/'values/colors.xml').write_text('<resources><color name="synqora_icon_background">#000000</color></resources>')
+print('Exported supplied logo into desktop, launcher and in-app assets.')

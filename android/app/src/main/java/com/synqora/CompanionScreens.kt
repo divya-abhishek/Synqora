@@ -33,52 +33,68 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.synqora.data.*
 import com.synqora.design.*
 
+@Composable internal fun CompanionDock(page: String, device: DeviceState, mic: Boolean, camera: Boolean, modifier: Modifier, navigate: (String) -> Unit, connect: () -> Unit) {
+    val source = remember { MutableInteractionSource() }
+    val connected = device.phase == ConnectionPhase.Connected
+    val compact = androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp < 480
+    Column(modifier.widthIn(max = 440.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (!compact) GlassLens(Modifier.fillMaxWidth().glassPress(source).clickable(source, null, role = Role.Button, onClick = connect), source = source, radius = 30.dp) {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                GlassIcon(Icons.Outlined.LaptopWindows, size = 25.dp, token = "text")
+                Column(Modifier.weight(1f)) {
+                    GlassText(if (connected) device.name else "Connect your computer", 14, bold = true)
+                    GlassText(if (connected) if (mic || camera) listOfNotNull(if (mic) "Microphone live" else null, if (camera) "Camera live" else null).joinToString(" · ") else "Connected securely" else "Your private companion", 12, "muted")
+                }
+                GlassIcon(if (connected) Icons.Outlined.Link else Icons.Outlined.QrCodeScanner, label = "Connection details", size = 22.dp, token = "text")
+            }
+        }
+        CompanionNavigation(page, Modifier.fillMaxWidth(), navigate)
+    }
+}
+
 @Composable internal fun CompanionNavigation(page: String, modifier: Modifier, navigate: (String) -> Unit) {
     val c = LocalGlass.current
-    GlassSurface(modifier.widthIn(max = 420.dp).fillMaxWidth(), material = "Elevated", padding = 6.dp, radius = 32.dp) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+    GlassLens(modifier.widthIn(max = 440.dp).fillMaxWidth(), radius = 38.dp) {
+        Row(Modifier.fillMaxWidth().padding(6.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             listOf(Triple("Overview", "Device", Icons.Outlined.Devices), Triple("Inbox", "Inbox", Icons.Outlined.NotificationsNone), Triple("Files", "Files", Icons.Outlined.FolderOpen)).forEach { (destination, label, icon) ->
                 val source = remember { MutableInteractionSource() }; val selected = page == destination
-                TextButton({ navigate(destination) }, Modifier.weight(1f).heightIn(min = 58.dp).glassPress(source).semantics { this.selected = selected }, interactionSource = source, shape = RoundedCornerShape(26.dp), colors = ButtonDefaults.textButtonColors(contentColor = c[if (selected) "text" else "muted"], containerColor = if (selected) c["text"].copy(alpha = .1f) else Color.Transparent), contentPadding = PaddingValues(6.dp)) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(3.dp)) { Icon(icon, null, Modifier.size(22.dp)); Text(label, fontSize = 12.sp) }
+                TextButton({ navigate(destination) }, Modifier.weight(1f).heightIn(min = 60.dp).glassPress(source).semantics { this.selected = selected }, interactionSource = source, shape = RoundedCornerShape(32.dp), colors = ButtonDefaults.textButtonColors(contentColor = c[if (selected) "accent" else "text"], containerColor = if (selected) c["text"].copy(alpha = .09f) else Color.Transparent), contentPadding = PaddingValues(6.dp)) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) { Icon(icon, null, Modifier.size(25.dp)); Text(label, fontSize = 12.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold) }
                 }
             }
         }
     }
 }
 @Composable internal fun ColumnScope.CompanionDashboard(device: DeviceState, mic: Boolean, camera: Boolean, navigate: (String) -> Unit, connect: () -> Unit) {
+    val c = LocalGlass.current
     val connected = device.phase == ConnectionPhase.Connected
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) { GlassDisplay("Your devices", 34); GlassText("Connect your phone and PC.", 14, "muted") }
-    GlassSurface(Modifier.fillMaxWidth(), "Regular", 24.dp, 28.dp) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Box(Modifier.size(52.dp).clip(RoundedCornerShape(18.dp)).background(LocalGlass.current["text"].copy(alpha = .07f)), contentAlignment = Alignment.Center) { GlassIcon(Icons.Outlined.LaptopWindows, size = 28.dp) }
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) { GlassText(if (connected) device.name else "Your computer", 20, bold = true); GlassText(if (connected) "Connected securely" else "Not connected", 13, if (connected) "success" else "muted") }
-        }
-        if (connected) {
-            HorizontalDivider(color = LocalGlass.current["text"].copy(alpha = .08f))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) { GlassText(if (mic || camera) "Sharing ${listOfNotNull(if (camera) "camera" else null, if (mic) "audio" else null).joinToString(" + ")}" else "Companion ready", 14, bold = true); GlassText(if (mic || camera) "Tap a control to stop sharing" else "Camera & microphone are off", 12, "muted") }
-                GlassIcon(Icons.Outlined.CheckCircleOutline, size = 24.dp, token = "success")
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) { GlassDisplay("Your devices", 36); GlassText("Everything, a little more connected.", 15, "muted") }
+    GlassSurface(Modifier.fillMaxWidth(), "Regular", 24.dp, 30.dp) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+            Box(Modifier.size(76.dp).clip(RoundedCornerShape(23.dp)).background(c["accent"].copy(alpha = .10f)), contentAlignment = Alignment.Center) { GlassIcon(Icons.Outlined.LaptopWindows, size = 44.dp) }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                GlassText(if (connected) device.name else "Your computer", 22, bold = true)
+                GlassText(if (connected) "Connected securely" else "Ready to connect", 14, if (connected) "success" else "muted")
             }
-        } else {
-            GlassText("Connect over your local network. Your files and notifications go directly to your PC.", 14, "muted")
-            GlassButton(if (device.phase == ConnectionPhase.Connecting) "Connecting" else "Connect a computer", Modifier.fillMaxWidth(), true, loading = device.phase == ConnectionPhase.Connecting, icon = Icons.Outlined.QrCodeScanner, onClick = connect)
         }
+        GlassText(if (connected) if (mic || camera) "Sharing ${listOfNotNull(if (camera) "camera" else null, if (mic) "audio" else null).joinToString(" + ")}" else "Your companion is ready. Camera and microphone are off." else "One private connection for your files, conversations and controls.", 15, "muted")
+        GlassButton(if (connected) "Connection details" else if (device.phase == ConnectionPhase.Connecting) "Connecting" else "Connect a computer", Modifier.fillMaxWidth(), primary = !connected, loading = device.phase == ConnectionPhase.Connecting, icon = Icons.Outlined.QrCodeScanner, onClick = connect)
     }
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        GlassText("Use your phone", 18, bold = true)
-        val controls = listOf(Triple("Microphone", if (mic) "Sharing audio" else "Clearer conversations", Icons.Outlined.MicNone), Triple("Webcam", if (camera) "Camera is live" else "A better camera", Icons.Outlined.Videocam), Triple("Touchpad", "A little more control", Icons.Outlined.TouchApp), Triple("Keyboard", "Type from here", Icons.Outlined.Keyboard))
+        GlassText("Controls", 23, bold = true)
+        val controls = listOf(Triple("Microphone", if (mic) "Sharing audio" else "Your voice, in focus", Icons.Outlined.MicNone), Triple("Webcam", if (camera) "Camera is live" else "A clearer picture", Icons.Outlined.Videocam), Triple("Touchpad", "Move. Tap. Scroll.", Icons.Outlined.TouchApp), Triple("Keyboard", "Type on your PC", Icons.Outlined.Keyboard))
         controls.chunked(2).forEach { row -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             row.forEach { (name, subtitle, icon) ->
                 val source = remember { MutableInteractionSource() }
-                GlassSurface(Modifier.weight(1f).glassPress(source).clickable(source, null, role = Role.Button) { navigate(name) }, "Subtle", 18.dp, 22.dp) {
-                    GlassIcon(icon, size = 26.dp)
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) { GlassText(name, 16, bold = true); GlassText(subtitle, 12, "muted") }
+                GlassSurface(Modifier.weight(1f).glassPress(source).clickable(source, null, role = Role.Button) { navigate(name) }, "Subtle", 20.dp, 25.dp) {
+                    GlassIcon(icon, size = 32.dp)
+                    Spacer(Modifier.height(10.dp))
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) { GlassText(name, 17, bold = true); GlassText(subtitle, 12, "muted") }
                 }
             }
         } }
     }
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) { GlassIcon(Icons.Outlined.Lock, size = 14.dp, token = "muted"); GlassText("Encrypted local connection", 12, "muted") }
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) { GlassIcon(Icons.Outlined.Lock, size = 14.dp, token = "muted"); GlassText("Encrypted. Direct. Just your devices.", 12, "muted") }
     device.error?.let { GlassText(it, 13, "danger") }
 }
 

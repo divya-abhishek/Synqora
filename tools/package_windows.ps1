@@ -33,7 +33,7 @@ Copy-Item (Join-Path $taskRoot 'THIRD-PARTY-NOTICES.md') -Destination $publishFo
 Copy-Item (Join-Path $taskRoot 'LICENSE') -Destination $publishFolder
 $documentation = Join-Path $publishFolder 'docs'
 New-Item -ItemType Directory -Path $documentation -Force | Out-Null
-foreach ($guide in @('INSTALLATION.md', 'VALIDATION.md', 'DESIGN.md', 'DEVICE-INTEGRATION.md', 'CALLING.md', 'SCREENSHOTS.md')) {
+foreach ($guide in @('INSTALLATION.md', 'VALIDATION.md', 'DESIGN.md', 'DEVICE-INTEGRATION.md', 'CALLING.md', 'SCREENSHOTS.md', 'REDESIGN-0.6.md', 'ANDROID-SECURITY.md', 'PRIVACY.md')) {
     Copy-Item (Join-Path $taskRoot "docs\$guide") -Destination $documentation
 }
 Copy-Item (Join-Path $taskRoot 'docs\screenshots') -Destination $documentation -Recurse -Force

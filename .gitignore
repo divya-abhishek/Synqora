@@ -23,3 +23,5 @@ brand/synqora-mark-master.png
 *.user
 *.log
 **/captures/
+
+**/.kotlin/

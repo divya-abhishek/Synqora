@@ -4,16 +4,16 @@
 
 **An Android and Windows companion for files, photos, notifications, calls and remote controls.**
 
-Synqora connects directly over your local network. It has native Windows and Android apps, a dark glass interface, and no cloud account in the connection path.
+Synqora connects directly over your local network. It has native Windows and Android apps, a monochrome glass interface, and no cloud account in the connection path.
 
-**Current release: [0.5.0 development preview](https://github.com/divya-abhishek/Synqora/releases/tag/v0.5.0-dev).** This is a test build. Physical-phone performance, external microphone capture and installation lifecycle testing are still in progress. It is not a finished replacement for a production device driver.
+**Current release: [0.6.0 development preview](https://github.com/divya-abhishek/Synqora/releases/tag/v0.6.0-dev).** This is a test build. Physical-phone performance, external microphone capture and installation lifecycle testing are still in progress. It is not a finished replacement for a production device driver.
 
 <p>
-<img src="docs/screenshots/windows-dark-overview.png" alt="Synqora's Windows sidebar and workspace in dark mode" width="720">
-<img src="docs/screenshots/android-dark-overview.png" alt="Synqora's Android dashboard in dark mode" width="240">
+<img src="docs/screenshots/0.6/windows-dark-overview.png" alt="Synqora's Windows sidebar and workspace in dark mode" width="720">
+<img src="docs/screenshots/0.6/android-dark-overview.png" alt="Synqora's Android dashboard in dark mode" width="240">
 </p>
 
-[See the native app screens](docs/SCREENSHOTS.md) · [Installation and troubleshooting](docs/INSTALLATION.md) · [Validation and known limits](docs/VALIDATION.md)
+[Redesign notes and test limits](docs/REDESIGN-0.6.md) · [See the native app screens](docs/SCREENSHOTS.md) · [Installation and troubleshooting](docs/INSTALLATION.md) · [Validation and known limits](docs/VALIDATION.md)
 
 ## What it does
 
@@ -60,7 +60,7 @@ The MSI bundles the app's .NET, Windows App SDK, graphics and Visual C++ runtime
 
 ## Install and connect
 
-1. Open the [0.5.0 preview release](https://github.com/divya-abhishek/Synqora/releases/tag/v0.5.0-dev). Download the **Windows MSI** and **Android APK**. The ZIP is a portable client for testing and does not register the camera component.
+1. Open the [0.5.0 preview release](https://github.com/divya-abhishek/Synqora/releases/tag/v0.6.0-dev). Download the **Windows MSI** and **Android APK**. The ZIP is a portable client for testing and does not register the camera component.
 2. Close Synqora and camera-consuming apps, then run the MSI. On Android, install the APK using the device's normal package installer. Preview Windows installers are not production code-signed.
 3. Open Synqora on the PC and choose **Connect phone**. On Android, choose **Connect a computer** or the link icon, then **Scan PC code**. Pasting the pairing link also works. Invitations expire after ten minutes.
 4. Start Microphone or Webcam on the phone. Allow the corresponding Android permission when prompted. Keep the active-session notification available so you can disconnect.
@@ -94,7 +94,7 @@ The portable ZIP does not register the camera source. Upgrading requires closing
 - External-app microphone capture, clean-machine offline install, upgrade/uninstall and physical-device acceptance remain open.
 - The original Synqora audio-driver research is unsigned and excluded from consumer packages. VB-CABLE is the available optional route.
 - Input into elevated Windows apps can be blocked by Windows. Consumer USB setup and automatic reconnect are unfinished.
-- Windows uses native thin acrylic. Android uses restrained layered glass and immediate navigation. Phone and PC are dark-only. Older or constrained devices use fallbacks. Apple's exact proprietary rendering and physics are not included.
+- Windows uses native thin acrylic. Android uses restrained layered glass and immediate navigation. Android offers System, Light and Dark themes; Windows retains its dark acrylic shell. Older or constrained devices use fallbacks. Apple's exact proprietary rendering and physics are not included.
 
 ## Build from source
 

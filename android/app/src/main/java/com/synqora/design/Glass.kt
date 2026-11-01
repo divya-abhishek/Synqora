@@ -27,7 +27,7 @@ val LocalGlass = staticCompositionLocalOf { GlassStyle(Tokens.dark, true, false,
 
 @Composable
 fun SynqoraTheme(dark: Boolean, solid: Boolean, motion: Boolean, economy: Boolean, highContrast: Boolean = false, rich: Boolean = false, content: @Composable () -> Unit) {
-    var colors = if (dark) Tokens.dark else Tokens.light
+    var colors = if (dark) Tokens.dark + mapOf("background" to Color.Black, "surface" to Color(0xFF1C1C1E), "solid" to Color(0xFF1C1C1E), "elevated" to Color(0xFF303033), "accent" to Color(0xFFF4F4F5), "onAccent" to Color(0xFF19191B), "muted" to Color(0xFFB0B0B8)) else Tokens.light + mapOf("background" to Color.White, "surface" to Color(0xFFF2F2F7), "solid" to Color(0xFFF2F2F7), "elevated" to Color(0xFFF7F7FA), "accent" to Color(0xFF202024), "onAccent" to Color.White, "muted" to Color(0xFF606069))
     if (highContrast) colors = colors + mapOf("background" to if (dark) Color.Black else Color.White, "surface" to if (dark) Color.Black else Color.White, "solid" to if (dark) Color.Black else Color.White, "text" to if (dark) Color.White else Color.Black, "muted" to if (dark) Color.White else Color.Black)
     val c = GlassStyle(colors, dark, solid || highContrast, motion, economy, rich)
     val scheme = if (dark) darkColorScheme(primary = c["accent"], onPrimary = c["onAccent"], background = c["background"], surface = c["surface"], onSurface = c["text"], onSurfaceVariant = c["muted"], outline = c["border"], secondary = c["cyan"])
@@ -40,9 +40,10 @@ fun GlassSurface(modifier: Modifier = Modifier, material: String = "Regular", pa
     val c = LocalGlass.current
     val m = Tokens.materials.getValue(if (c.solid) "SolidFallback" else material)
     val shape = RoundedCornerShape(radius ?: m.radius.dp)
-    val fill = if (c.solid) Brush.linearGradient(listOf(c["solid"], c["solid"])) else Brush.linearGradient(listOf(c[if (material == "Elevated") "elevated" else "surface"].copy(alpha = (m.opacity + .08f).coerceAtMost(1f)), c["surface"].copy(alpha = m.opacity)))
-    val rim = if (c.solid) Brush.linearGradient(listOf(c["border"], c["border"])) else Brush.linearGradient(0f to c["text"].copy(alpha = if (c.rich) .28f else .18f), .5f to c["text"].copy(alpha = .05f), 1f to c["text"].copy(alpha = .09f))
-    Column(modifier.shadow(if (c.solid || c.economy) 0.dp else m.elevation.dp, shape, ambientColor = c["background"], spotColor = c["background"]).clip(shape).background(fill).border(1.dp, rim, shape).padding(padding), verticalArrangement = Arrangement.spacedBy(16.dp), content = content)
+    val floating = material == "Elevated" || material == "Frosted"
+    val fill = c[if (floating) "elevated" else "surface"].copy(alpha = if (c.solid || !floating) 1f else .88f)
+    val rim = Brush.linearGradient(listOf(c["text"].copy(alpha = if (floating) .20f else .035f), c["text"].copy(alpha = .035f)))
+    Column(modifier.shadow(if (floating && !c.economy) 8.dp else 0.dp, shape).clip(shape).background(fill).border(.5.dp, rim, shape).padding(padding), verticalArrangement = Arrangement.spacedBy(16.dp), content = content)
 }
 
 @Composable fun Modifier.glassPress(source: MutableInteractionSource): Modifier {
@@ -53,8 +54,8 @@ fun GlassSurface(modifier: Modifier = Modifier, material: String = "Regular", pa
 }
 
 @Composable fun GlassCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) = GlassSurface(modifier, "Subtle", content = content)
-@Composable fun GlassText(text: String, size: Int = 14, token: String = "text", bold: Boolean = false, modifier: Modifier = Modifier) = Text(text, modifier, color = LocalGlass.current[token], fontSize = size.sp, fontWeight = if (bold) FontWeight.SemiBold else FontWeight.Normal, lineHeight = (size * 1.4).sp)
-@Composable fun GlassDisplay(text: String, size: Int = 30, modifier: Modifier = Modifier) = Text(text, modifier, color = LocalGlass.current["text"], fontSize = size.sp, fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Medium, lineHeight = (size * 1.18f).sp, letterSpacing = (-.7).sp)
+@Composable fun GlassText(text: String, size: Int = 14, token: String = "text", bold: Boolean = false, modifier: Modifier = Modifier) = Text(text, modifier, color = LocalGlass.current[token], fontSize = size.sp, fontWeight = if (bold) FontWeight.SemiBold else FontWeight.Normal, lineHeight = (size * 1.32).sp)
+@Composable fun GlassDisplay(text: String, size: Int = 30, modifier: Modifier = Modifier) = Text(text, modifier, color = LocalGlass.current["text"], fontSize = size.sp, fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, lineHeight = (size * 1.18f).sp, letterSpacing = (-.7).sp)
 @Composable fun GlassIcon(icon: ImageVector, label: String? = null, size: Dp = 24.dp, token: String = "accent") = Icon(icon, contentDescription = label, modifier = Modifier.size(size), tint = LocalGlass.current[token])
 
 @Composable
@@ -64,7 +65,7 @@ fun GlassButton(label: String, modifier: Modifier = Modifier, primary: Boolean =
     OutlinedButton(onClick, modifier.glassPress(source).heightIn(min = 48.dp), enabled = enabled && !loading, shape = RoundedCornerShape(26.dp), interactionSource = source, border = BorderStroke(1.dp, c["text"].copy(alpha = .12f)), colors = ButtonDefaults.outlinedButtonColors(containerColor = if (primary) c["accent"] else c["elevated"].copy(alpha = if (c.solid) 1f else .24f), contentColor = c[if (primary) "onAccent" else "text"]), contentPadding = PaddingValues(horizontal = 18.dp, vertical = 12.dp)) {
         if (loading) { CircularProgressIndicator(Modifier.size(18.dp), color = c[if (primary) "onAccent" else "accent"], strokeWidth = 2.dp); Spacer(Modifier.width(10.dp)) }
         else if (icon != null) { Icon(icon, null, Modifier.size(20.dp)); Spacer(Modifier.width(8.dp)) }
-        Text(label, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+        Text(label, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
     }
 }
 @Composable fun GlassIconButton(icon: ImageVector, label: String, enabled: Boolean = true, onClick: () -> Unit) {
@@ -101,19 +102,22 @@ fun GlassButton(label: String, modifier: Modifier = Modifier, primary: Boolean =
 }
 @Composable fun GlassSwitch(label: String, description: String, checked: Boolean, onChange: (Boolean) -> Unit) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) { GlassText(label, bold = true); GlassText(description, 12, "muted") }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) { GlassText(label, 16); if (description.isNotBlank()) GlassText(description, 13, "muted") }
         Switch(checked, onChange, modifier = Modifier.semantics { contentDescription = label }, colors = SwitchDefaults.colors(checkedTrackColor = LocalGlass.current["accent"], checkedThumbColor = LocalGlass.current["onAccent"], uncheckedTrackColor = LocalGlass.current["elevated"], uncheckedBorderColor = LocalGlass.current["border"], uncheckedThumbColor = LocalGlass.current["muted"]))
     }
 }
 @Composable fun GlassDropdown(label: String, choices: List<String>, value: String, onChange: (String) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        GlassText(label, 12, "muted")
-        Box {
-            GlassButton(value, Modifier.fillMaxWidth(), onClick = { expanded = true })
-            DropdownMenu(expanded, { expanded = false }, containerColor = LocalGlass.current["elevated"], shape = RoundedCornerShape(20.dp)) {
-                choices.forEach { choice -> DropdownMenuItem(text = { Text(choice) }, onClick = { expanded = false; onChange(choice) }) }
-            }
+    val c = LocalGlass.current
+    val source = remember { MutableInteractionSource() }
+    Box {
+        Row(Modifier.fillMaxWidth().heightIn(min = 52.dp).glassPress(source).clickable(source, null, role = Role.Button) { expanded = true }.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            GlassText(label, 16, modifier = Modifier.weight(1f))
+            GlassText(value, 14, "muted")
+            Text("⌄", color = c["muted"], fontSize = 18.sp)
+        }
+        DropdownMenu(expanded, { expanded = false }, containerColor = c["elevated"].copy(alpha = .96f), shape = RoundedCornerShape(24.dp)) {
+            choices.forEach { choice -> DropdownMenuItem(text = { Text(if (choice == value) "$choice  ✓" else choice) }, onClick = { expanded = false; onChange(choice) }) }
         }
     }
 }

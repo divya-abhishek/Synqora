@@ -1,8 +1,10 @@
 # Installing Synqora
 
-Download the MSI and APK from the [0.5.0 development preview](https://github.com/divya-abhishek/Synqora/releases/tag/v0.5.0-dev). Installers are preview builds; Windows signing, physical-device acceptance and the installation lifecycle are not production-validated.
+Download the MSI and APK from the [0.6.0 development preview](https://github.com/divya-abhishek/Synqora/releases/tag/v0.6.0-dev). Installers are preview builds; Windows signing, physical-device acceptance and the installation lifecycle are not production-validated.
 
 ## Windows
+
+Quit any older Synqora client from its tray menu before upgrading. In 0.6, opening the app again restores the existing session rather than starting another one.
 
 Use Windows 10 build 19041+ x64 for the client. Windows camera sharing requires Windows 11. Close Synqora and apps consuming its camera before upgrading. Run the MSI through Windows Installer. It includes the app runtimes and registers the original user-mode camera source. The portable ZIP runs the client but does not register that component.
 
@@ -10,7 +12,7 @@ Use Windows 10 build 19041+ x64 for the client. Windows camera sharing requires 
 
 Use Android 10 or later. Install the APK with the device's package installer and grant microphone/camera permission only for features you start. Notifications expose the active session and Disconnect action. Battery saver, thermal pressure and device-specific background restrictions can affect sustained operation. The app offers a dim-display camera control; it dims the screen rather than powering off the panel.
 
-The APK is signed, but Play Protect can still block installation because its optional notification-sync service declares sensitive notification access. A tester has reported that block for 0.5.0. Signing again does not clear Google's classification. Read [Android signing, permissions and the official review route](ANDROID-SECURITY.md) and the [data-handling notice](PRIVACY.md). Keep device protections enabled; Google review remains pending.
+The APK is signed, but Play Protect can still block installation because its optional notification-sync service declares sensitive notification access. A tester has reported that block for 0.5.0. Signing again does not clear Google's classification. Read [Android signing, permissions and the official review route](ANDROID-SECURITY.md) and the [data-handling notice](PRIVACY.md). Keep device protections enabled; The original appeal concerned 0.5.0; 0.6.0 has not received Google installation approval.
 
 ## Pairing
 

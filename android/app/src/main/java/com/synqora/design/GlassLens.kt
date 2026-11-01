@@ -24,15 +24,16 @@ import androidx.compose.ui.unit.*
 
 /** Captures only our own content. Controls are outside this layer, avoiding feedback. */
 @Stable class GlassBackdrop(val layer: GraphicsLayer) {
-    var origin by mutableStateOf(Offset.Zero)
-    var bandTop by mutableFloatStateOf(0f)
+    init { layer.renderEffect = BlurEffect(14f, 14f, TileMode.Clamp) }
+    var origin = Offset.Zero
+    var bandTop = 0f
 }
 val LocalBackdrop = staticCompositionLocalOf<GlassBackdrop?> { null }
 fun Modifier.recordBackdrop(backdrop: GlassBackdrop) = onGloballyPositioned { backdrop.origin = it.positionInRoot() }
     .drawWithContent {
         // The only optical control is at the bottom. Record a bounded strip,
         // avoiding a full-screen offscreen target during every press or scroll.
-        val height = minOf(size.height.toInt(), 136.dp.roundToPx())
+        val height = minOf(size.height.toInt(), 224.dp.roundToPx())
         backdrop.bandTop = size.height - height
         backdrop.layer.record(size = IntSize(size.width.toInt(), height)) {
             clipRect { translate(0f, -backdrop.bandTop) { this@drawWithContent.drawContent() } }
@@ -49,8 +50,8 @@ fun Modifier.recordBackdrop(backdrop: GlassBackdrop) = onGloballyPositioned { ba
     val pressure by animateFloatAsState(if (pressed) 1f else 0f, if (c.motion) spring(.92f, 800f) else snap(), label = "lens pressure")
     val shape = RoundedCornerShape(radius)
     val optical = Build.VERSION.SDK_INT >= 33 && c.rich && !c.solid && !c.economy && backdrop != null
-    Box(modifier.onGloballyPositioned { position = it.positionInRoot() }.clip(shape)
-        .background(c["solid"].copy(alpha = if (c.solid) 1f else if (optical) .12f else .65f))
+    Box(modifier.shadow(if (c.solid || c.economy) 0.dp else 10.dp, shape).onGloballyPositioned { position = it.positionInRoot() }.clip(shape)
+        .background(c["solid"].copy(alpha = if (c.solid) 1f else if (optical) .12f else .90f))
         .border(1.dp, Brush.linearGradient(listOf(c["text"].copy(alpha = .26f), c["text"].copy(alpha = .035f), c["text"].copy(alpha = .14f))), shape)) {
         if (optical) OpticalLayer(backdrop!!, position, pressure, radius, Modifier.matchParentSize())
         content()
@@ -68,7 +69,7 @@ fun Modifier.recordBackdrop(backdrop: GlassBackdrop) = onGloballyPositioned { ba
         shader.setFloatUniform("bounds", size.width, size.height)
         shader.setFloatUniform("radius", radiusPx)
         shader.setFloatUniform("pressure", pressure)
-        shader.setFloatUniform("tint", tint.red, tint.green, tint.blue, if (c.dark) .50f else .60f)
+        shader.setFloatUniform("tint", tint.red, tint.green, tint.blue, if (c.dark) .76f else .84f)
         renderEffect = android.graphics.RenderEffect.createRuntimeShaderEffect(shader, "scene").asComposeRenderEffect()
         clip = true
     }) {

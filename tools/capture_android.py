@@ -63,7 +63,7 @@ try:
     adb('shell', 'wm', 'size', '1080x2400')
     adb('shell', 'wm', 'density', '420')
     launch('Overview', 'Dark', '--ez', 'reset_preferences', 'true')
-    for theme in ['Dark']:
+    for theme in ['Dark', 'Light']:
         for screen in screens:
             launch(screen, theme)
             capture(f'android-{theme.lower()}-{screen.lower()}')

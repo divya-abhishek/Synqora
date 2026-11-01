@@ -141,6 +141,7 @@ public sealed partial class MainWindow : Window
         Activated += (_, e) => { if (e.WindowActivationState != WindowActivationState.Deactivated && lastHighContrast != g.HighContrast) Build(); };
     }
     private void ShowWindow() { AppWindow.Show(); if (AppWindow.Presenter is OverlappedPresenter p) p.Restore(); Activate(); }
+    internal void RestoreExistingSession() => ShowWindow();
     private void Build()
     {
         liveBindings.Clear(); pageBindings.Clear(); audioView = null; cameraImage = null; fileList = null; notificationList = null; callList = null; notificationCards.Clear(); photos = null; photoStatus = null; photoImages.Clear(); loadedPhotos.Clear(); photoGeneration++; recentCalls = null; dialNumber = null; dialButton = null; callAccess = null; dialResult = null; bluetoothCallList = null; bluetoothStatus = null;
@@ -167,7 +168,7 @@ public sealed partial class MainWindow : Window
         root.Resources["ContentDialogBorderBrush"] = g.Brush("text", .13);
         root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(48) });
         root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-        var title = Row(10, Brand.Mark(g, 28), g.Text("Synqora", 14, "text", true), g.Text("Preview 0.5", 11, "muted"));
+        var title = Row(10, g.Text("Synqora", 14, "text", true), g.Text("Preview 0.6", 11, "muted"));
         title.Margin = new(24, 0, 150, 0); title.Background = g.Brush("background", .01);
         root.Children.Add(title); SetTitleBar(title);
         AppWindow.TitleBar.ButtonForegroundColor = g.Color("text");
@@ -178,7 +179,7 @@ public sealed partial class MainWindow : Window
         sidebarLabel = g.Text("Workspace", 12, "muted"); sidebarLabel.Margin = new(14, 14, 0, 16); sidebar.Children.Add(sidebarLabel);
         nav = Stack(5); nav.HorizontalAlignment = HorizontalAlignment.Stretch;
         var navScroll = new ScrollViewer { Content = nav, VerticalScrollBarVisibility = ScrollBarVisibility.Hidden, HorizontalScrollMode = ScrollMode.Disabled }; Grid.SetRow(navScroll, 1); sidebar.Children.Add(navScroll); BuildNav();
-        connectionButton = g.Button("Connect phone", ConnectionDetails, glyph: "\uE8F2"); connectionButton.HorizontalAlignment = HorizontalAlignment.Stretch; connectionButton.HorizontalContentAlignment = HorizontalAlignment.Left;
+        connectionButton = g.Button("Connect phone", ConnectionDetails, glyph: "\uE8EA"); connectionButton.HorizontalAlignment = HorizontalAlignment.Stretch; connectionButton.HorizontalContentAlignment = HorizontalAlignment.Left;
         var footer = Stack(12, connectionButton); footer.Margin = new(0, 20, 0, 4); Grid.SetRow(footer, 2); sidebar.Children.Add(footer);
         var navigation = g.Surface(sidebar, "Regular", 8); navigation.CornerRadius = new(20); shell.Children.Add(navigation);
         scroll = new ScrollViewer { HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, HorizontalScrollMode = ScrollMode.Disabled, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalContentAlignment = HorizontalAlignment.Stretch };
@@ -218,7 +219,7 @@ public sealed partial class MainWindow : Window
         var next = width < 940; sidebarColumn.Width = new(next ? 72 : 216);
         sidebarLabel.Visibility = next ? Visibility.Collapsed : Visibility.Visible;
         foreach (var label in navLabels.Values) label.Visibility = next ? Visibility.Collapsed : Visibility.Visible;
-        connectionButton.Content = next ? g.Icon("\uE8F2", 19) : Row(12, g.Icon("\uE8F2", 19), g.Text("Connect phone", 14));
+        connectionButton.Content = next ? g.Icon("\uE8EA", 19) : Row(12, g.Icon("\uE8EA", 19), g.Text("Connect phone", 14));
         connectionButton.Padding = new(next ? 14 : 18, 11, next ? 14 : 18, 11);
     }
     private void SizeWorkspace()
@@ -432,7 +433,7 @@ public sealed partial class MainWindow : Window
         return Stack(28, Heading("", "Touchpad", "Control this PC from your phone."),
             g.Leading(g.Icon("\uE7C9", 36), Stack(8, g.Text("Ready for your gestures", 20, "text", true), Live(() => session.CanStream ? session.Device.Name : "Connect a phone to begin", 14, "muted"))),
             ControlSwitch(), g.Rule(), Guide("One finger", "Move the pointer"), Guide("Two fingers", "Scroll the page"), Guide("Tap", "Click the focused item"), g.Rule(),
-            LiveStatus(() => session.CanStream && session.Server.State.ControlsAllowed ? "Ready for gestures" : "Phone controls paused"), g.Button("Connection details", ConnectionDetails, glyph: "\uE8F2"));
+            LiveStatus(() => session.CanStream && session.Server.State.ControlsAllowed ? "Ready for gestures" : "Phone controls paused"), g.Button("Connection details", ConnectionDetails, glyph: "\uE8EA"));
     }
     private StackPanel Keyboard()
     {

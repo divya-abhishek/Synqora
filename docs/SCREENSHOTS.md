@@ -1,3 +1,24 @@
+# Synqora 0.6 screens
+
+Actual native emulator/WinUI captures. Mobile has monochrome light and dark themes, two floating frosted bars and grouped settings; Windows keeps its existing dark shell. No personal messages, pairing secrets or private photo libraries are present.
+
+| Screen | Dark | Light |
+| --- | --- | --- |
+| Devices | [Preview](screenshots/0.6/android-dark-overview.png) | [Preview](screenshots/0.6/android-light-overview.png) |
+| Settings | [Preview](screenshots/0.6/android-dark-settings.png) | [Preview](screenshots/0.6/android-light-settings.png) |
+| Inbox | [Preview](screenshots/0.6/android-dark-inbox.png) | [Preview](screenshots/0.6/android-light-inbox.png) |
+| Files | [Preview](screenshots/0.6/android-dark-files.png) | [Preview](screenshots/0.6/android-light-files.png) |
+| Microphone | [Preview](screenshots/0.6/android-dark-microphone.png) | [Preview](screenshots/0.6/android-light-microphone.png) |
+| Webcam | [Preview](screenshots/0.6/android-dark-webcam.png) | [Preview](screenshots/0.6/android-light-webcam.png) |
+| Touchpad | [Preview](screenshots/0.6/android-dark-touchpad.png) | [Preview](screenshots/0.6/android-light-touchpad.png) |
+| Keyboard | [Preview](screenshots/0.6/android-dark-keyboard.png) | [Preview](screenshots/0.6/android-light-keyboard.png) |
+| Photos | [Preview](screenshots/0.6/android-dark-photos.png) | [Preview](screenshots/0.6/android-light-photos.png) |
+| Calls | [Preview](screenshots/0.6/android-dark-calls.png) | [Preview](screenshots/0.6/android-light-calls.png) |
+
+[Windows overview](screenshots/0.6/windows-dark-overview.png) · [All 0.6 captures](screenshots/0.6) · [Validation notes](REDESIGN-0.6.md)
+
+## Archived 0.5 captures
+
 # Synqora 0.5 screens
 
 Actual native renders from the current dark-only apps. Device labels in public PC captures are generic. These images do not contain pairing codes, personal notifications or private photo libraries.

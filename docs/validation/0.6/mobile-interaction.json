@@ -1,0 +1,11 @@
+{
+  "themePersistsAfterRelaunch": true,
+  "rootNavigationRespondsToTouch": true,
+  "connectionDockOpensRealSheet": true,
+  "viewportsCaptured": [
+    "1080x2400/420",
+    "720x1600/320",
+    "1920x1080/360",
+    "font scale 1.6"
+  ]
+}

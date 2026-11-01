@@ -9,6 +9,10 @@ public static class Program
     [STAThread]
     public static void Main(string[] args)
     {
+        // Automated captures and isolated receiver probes must not activate a user's session.
+        var isolated = args.Contains("--capture") || args.Contains("--receiver-test");
+        using var instance = new SingleInstance(isolated ? "Local\\Synqora.Probe." + Guid.NewGuid() : "Local\\Synqora." + System.Security.Principal.WindowsIdentity.GetCurrent().User!.Value);
+        if (!instance.IsPrimary) { instance.Signal(); return; }
         StartupDiagnostics.Write("Starting Synqora " + typeof(Program).Assembly.GetName().Version);
         try
         {
@@ -16,14 +20,14 @@ public static class Program
             Application.Start(startArgs =>
             {
                 SynchronizationContext.SetSynchronizationContext(new Microsoft.UI.Dispatching.DispatcherQueueSynchronizationContext(Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread()));
-                _ = new SynqoraApp(args);
+                _ = new SynqoraApp(args, instance);
             });
         }
         catch (Exception e) { StartupDiagnostics.Fail(e, args); }
     }
 }
 
-public sealed class SynqoraApp(string[] args) : Application, Microsoft.UI.Xaml.Markup.IXamlMetadataProvider
+public sealed class SynqoraApp(string[] args, SingleInstance instance) : Application, Microsoft.UI.Xaml.Markup.IXamlMetadataProvider
 {
     private readonly Microsoft.UI.Xaml.XamlTypeInfo.XamlControlsXamlMetaDataProvider metadata = new();
     public Microsoft.UI.Xaml.Markup.IXamlType GetXamlType(Type type) => metadata.GetXamlType(type);
@@ -37,6 +41,7 @@ public sealed class SynqoraApp(string[] args) : Application, Microsoft.UI.Xaml.M
         {
             Resources.MergedDictionaries.Add(new Microsoft.UI.Xaml.Controls.XamlControlsResources());
             window = new MainWindow(args);
+            instance.Listen(() => window.DispatcherQueue.TryEnqueue(window.RestoreExistingSession));
             if (args.Contains("--background-capture"))
             {
                 window.AppWindow.Move(new Windows.Graphics.PointInt32(-16000, -16000));
